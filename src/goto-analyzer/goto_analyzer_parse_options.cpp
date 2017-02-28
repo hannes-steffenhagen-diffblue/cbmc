@@ -55,6 +55,8 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <util/unicode.h>
 #include <util/exit_codes.h>
 
+#include <analyses/variable-sensitivity/variable_sensitivity_object_factory.h>
+
 #include <cbmc/version.h>
 
 #include "taint_analysis.h"
@@ -616,6 +618,9 @@ int goto_analyzer_parse_optionst::perform_analysis(const optionst &options)
 
   if(options.get_bool_option("general-analysis"))
   {
+
+    // Store options in static variable_sensitivity_object_factory object
+    variable_sensitivity_object_factoryt::instance().set_options(options);
 
     // Output file factory
     const std::string outfile=options.get_option("outfile");
