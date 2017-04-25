@@ -8,6 +8,7 @@ SRC = unit_tests.cpp \
       analyses/call_graph.cpp \
       java_bytecode/java_bytecode_convert_class/convert_abstract_class.cpp \
       analyses/variable-sensitivity/abstract_object/merge.cpp \
+      analyses/variable-sensitivity/constant_abstract_value/merge.cpp \
       # Empty last line
 
 # Test source files
