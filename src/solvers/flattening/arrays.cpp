@@ -222,9 +222,11 @@ void arrayst::weg_path_condition(
 {
   for(const auto &pn : path)
   {
+#if ARRAY_SPEEDUP_DEBUG
     std::cout << "edge: " << pn.n << "->" <<
       pn.edge->first << " " <<
       from_expr(arrays[pn.n]) << "\n";
+#endif
 
     const weg_edget &weg_edge=pn.edge->second;
 
@@ -250,9 +252,11 @@ void arrayst::process_weg_path(const weg_patht &path)
   const index_sett &index_set_a=index_map[a];
   const index_sett &index_set_b=index_map[b];
 
+#if ARRAY_SPEEDUP_DEBUG
   std::cout << "b is: "
             << from_expr(ns, "", arrays[b])
             << '\n';
+#endif
 
   for(const auto &index_a : index_set_a)
   {
@@ -279,9 +283,11 @@ void arrayst::process_weg_path(const weg_patht &path)
       implies_exprt implication(
         conjunction(cond),
         equal_exprt(a_i, value_b));
+#if ARRAY_SPEEDUP_DEBUG
       std::cout << "C2a: "
                 << from_expr(ns, "", implication)
                 << '\n';
+#endif
       set_to_true(implication);
     }
     else if(arrays[b].id()==ID_array_of)
@@ -303,9 +309,11 @@ void arrayst::process_weg_path(const weg_patht &path)
       implies_exprt implication(
         conjunction(cond),
         equal_exprt(a_i, value_b));
+#if ARRAY_SPEEDUP_DEBUG
       std::cout << "C2b: "
                 << from_expr(ns, "", implication)
                 << '\n';
+#endif
       set_to_true(implication);
     }
 
@@ -332,9 +340,11 @@ void arrayst::process_weg_path(const weg_patht &path)
         implies_exprt implication(
           conjunction(cond),
           equal_exprt(a_i, b_i));
+#if ARRAY_SPEEDUP_DEBUG
         std::cout << "C3: "
                   << from_expr(ns, "", implication)
                   << '\n';
+#endif
         set_to_true(implication);
       }
     }
@@ -343,11 +353,13 @@ void arrayst::process_weg_path(const weg_patht &path)
 
 void arrayst::add_array_constraints()
 {
+#if ARRAY_SPEEDUP_DEBUG
   for(const auto & a : arrays)
   {
     std::cout << "array: " << from_expr(ns, "", a)
               << '\n';
   }
+#endif
 
   // auxiliary bit per node for DFS
   std::vector<bool> visited;
@@ -355,9 +367,11 @@ void arrayst::add_array_constraints()
 
   for(wegt::node_indext a=0; a<arrays.size(); a++)
   {
+#if ARRAY_SPEEDUP_DEBUG
     std::cout << "a is: "
               << from_expr(ns, "", arrays[a])
               << '\n';
+#endif
 
     // DFS from a_i to anything reachable in 'weg'
     std::fill(visited.begin(), visited.end(), false);
@@ -455,11 +469,13 @@ void arrayst::add_array_Ackermann_constraints()
           equal_exprt values_equal(index_expr1, index_expr2);
           prop.lcnf(!indices_equal_lit, convert(values_equal));
 
+#if ARRAY_SPEEDUP_DEBUG
           std::cout << "C4: "
                     << from_expr(ns, "", indices_equal)
                     << " => "
                     << from_expr(ns, "", values_equal)
                     << '\n';
+#endif
         }
       }
     }
