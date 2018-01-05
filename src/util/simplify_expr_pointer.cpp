@@ -388,6 +388,28 @@ bool simplify_exprt::simplify_pointer_offset(exprt &expr)
   return true;
 }
 
+bool simplify_exprt::simple_structural_lvalue_equal(exprt &lhs, exprt &rhs)
+{
+  if(lhs.id() != rhs.id())
+  {
+    return false;
+  }
+  if(lhs.id() == ID_symbol)
+  {
+    return lhs.get(ID_identifier) == rhs.get(ID_identifier);
+  }
+  else if(lhs.id() == ID_member)
+  {
+    auto lhs_member_of = to_member_expr(lhs);
+    auto rhs_member_of = to_member_expr(rhs);
+    return
+      lhs_member_of.get_component_name() == rhs_member_of.get_component_name()
+      && simple_structural_lvalue_equal(
+          lhs_member_of.compound(), rhs_member_of.compound());
+  }
+  return false;
+}
+
 bool simplify_exprt::simplify_inequality_address_of(exprt &expr)
 {
   assert(expr.type().id()==ID_bool);
@@ -423,6 +445,12 @@ bool simplify_exprt::simplify_inequality_address_of(exprt &expr)
 
     expr.make_bool(expr.id()==ID_equal?equal:!equal);
 
+    return false;
+  }
+
+  if(simple_structural_lvalue_equal(tmp0.op0(), tmp1.op0()))
+  {
+    expr.make_bool(expr.id() == ID_equal);
     return false;
   }
 
