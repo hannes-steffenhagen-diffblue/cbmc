@@ -11,6 +11,8 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <cassert>
 
 #include "c_types.h"
+#include "simplify_expr.h"
+#include "simplify_expr_class.h"
 #include "expr.h"
 #include "namespace.h"
 #include "std_expr.h"
@@ -420,37 +422,64 @@ bool simplify_exprt::simplify_pointer_offset(exprt &expr)
 static exprt simplify_inequality_address_of_prepare_op(const exprt &op)
 {
   exprt result = op;
-  if(op.id() == ID_typecast)
+  while(result.id() == ID_typecast)
   {
     result = result.op0();
   }
-  if(
-    result.op0().id() == ID_index &&
-    to_index_expr(result.op0()).index().is_zero())
-  {
-    result = address_of_exprt(to_index_expr(result.op0()).array());
-  }
+  POSTCONDITION(result.id() == ID_address_of);
   return result;
+}
+
+// returns true if op is a symbol or an expression like x.y[constant].z
+static bool simplify_inequality_is_simple_structure_expression(const exprt &op)
+{
+  exprt expr = op;
+  while(expr.id() == ID_member || expr.id() == ID_index)
+  {
+    if(expr.id() == ID_member)
+    {
+      expr = to_member_expr(expr).compound();
+    }
+    if(expr.id() == ID_index)
+    {
+      const index_exprt index = to_index_expr(expr);
+      if(!index.index().is_constant())
+      {
+        return false;
+      }
+      expr = index.array();
+    }
+  }
+  return expr.id() == ID_symbol;
 }
 
 bool simplify_exprt::simplify_inequality_address_of(exprt &expr)
 {
-  assert(expr.type().id()==ID_bool);
-  assert(expr.operands().size()==2);
-  assert(expr.id()==ID_equal || expr.id()==ID_notequal);
+  PRECONDITION(expr.type().id()==ID_bool);
+  PRECONDITION(expr.operands().size()==2);
+  PRECONDITION(expr.id()==ID_equal || expr.id()==ID_notequal);
 
   exprt lhs = simplify_inequality_address_of_prepare_op(expr.op0());
   exprt rhs = simplify_inequality_address_of_prepare_op(expr.op1());
-  assert(lhs.id() == ID_address_of);
-  assert(rhs.id() == ID_address_of);
 
   if(lhs.operands().size() != 1 || rhs.operands().size() != 1)
     return true;
 
-  if(lhs.op0().id() == ID_symbol && rhs.op0().id() == ID_symbol)
-  {
-    bool equal = lhs.op0().get(ID_identifier) == rhs.op0().get(ID_identifier);
+  // strip the address-of operator
+  lhs = lhs.op0();
+  rhs = rhs.op0();
 
+  if(simplify_inequality_is_simple_structure_expression(lhs)
+      && simplify_inequality_is_simple_structure_expression(rhs))
+  {
+    object_descriptor_exprt lhs_descriptor, rhs_descriptor;
+    lhs_descriptor.build(lhs, ns);
+    rhs_descriptor.build(rhs, ns);
+    exprt lhs_offset = simplify_expr(lhs_descriptor.offset(), ns);
+    exprt rhs_offset = simplify_expr(rhs_descriptor.offset(), ns);
+    bool equal = lhs_descriptor.root_object() == rhs_descriptor.root_object()
+      && lhs_offset.is_constant()
+      && lhs_offset == rhs_offset;
     expr.make_bool(expr.id()==ID_equal?equal:!equal);
 
     return false;

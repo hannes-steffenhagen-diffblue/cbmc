@@ -145,3 +145,167 @@ TEST_CASE("Simplify Java short -> int -> short casts")
 {
   test_unnecessary_cast(java_short_type());
 }
+
+SCENARIO("Comparing pointers to struct and union members")
+{
+  config.set_arch("none");
+  symbol_tablet symbol_table;
+  namespacet ns(symbol_table);
+
+  signedbv_typet int_type(32);
+
+  struct_typet simple_struct;
+  simple_struct.components().emplace_back("x", int_type);
+  simple_struct.components().emplace_back("y", int_type);
+
+  symbol_exprt simple_struct_var("s", simple_struct);
+
+  union_typet simple_union;
+  simple_union.components().emplace_back("x", int_type);
+  simple_union.components().emplace_back("y", int_type);
+
+  symbol_exprt simple_union_var("u", simple_union);
+
+  WHEN("Comparing pointers to the same member in a struct")
+  {
+    THEN("Equality should simplify to true")
+    {
+      auto equals = equal_exprt(
+          address_of_exprt(member_exprt(simple_struct_var, "x", int_type)),
+          address_of_exprt(member_exprt(simple_struct_var, "x", int_type))
+      );
+      REQUIRE(simplify_expr(equals, ns) == true_exprt());
+    }
+    THEN("Inequality should simplify to false")
+    {
+      auto notequals = notequal_exprt(
+          address_of_exprt(member_exprt(simple_struct_var, "x", int_type)),
+          address_of_exprt(member_exprt(simple_struct_var, "x", int_type))
+      );
+      REQUIRE(simplify_expr(notequals, ns) == false_exprt());
+    }
+  }
+
+  WHEN("Comparing pointers to different members in a struct")
+  {
+    THEN("Equality should simplify to false")
+    {
+      auto equals = equal_exprt(
+          address_of_exprt(member_exprt(simple_struct_var, "x", int_type)),
+          address_of_exprt(member_exprt(simple_struct_var, "y", int_type))
+      );
+      REQUIRE(simplify_expr(equals, ns) == false_exprt());
+    }
+    THEN("Inequality should simplify to true")
+    {
+      auto notequals = notequal_exprt(
+          address_of_exprt(member_exprt(simple_struct_var, "x", int_type)),
+          address_of_exprt(member_exprt(simple_struct_var, "y", int_type))
+      );
+      REQUIRE(simplify_expr(notequals, ns) == true_exprt());
+    }
+  }
+
+  WHEN("Comparing pointer to struct with pointer to first member")
+  {
+    THEN("Equality should simplify to true")
+    {
+      auto equals = equal_exprt(
+        typecast_exprt(address_of_exprt(simple_struct_var), pointer_type(int_type)),
+        address_of_exprt(member_exprt(simple_struct_var, "x", int_type))
+      );
+      REQUIRE(simplify_expr(equals, ns) == true_exprt());
+    }
+
+    THEN("Inequality should simplify to false")
+    {
+      auto notequals = notequal_exprt(
+          typecast_exprt(address_of_exprt(simple_struct_var), pointer_type(int_type)),
+          address_of_exprt(member_exprt(simple_struct_var, "x", int_type))
+      );
+      REQUIRE(simplify_expr(notequals, ns) == false_exprt());
+    }
+  }
+
+  WHEN("Comparing pointer to struct with pointer to member other than first")
+  {
+    THEN("Equality should simplify to false")
+    {
+      auto equals = equal_exprt(
+          typecast_exprt(address_of_exprt(simple_struct_var), pointer_type(int_type)),
+          address_of_exprt(member_exprt(simple_struct_var, "y", int_type))
+      );
+      REQUIRE(simplify_expr(equals, ns) == false_exprt());
+    }
+
+    THEN("Inequality should simplify to true")
+    {
+      auto notequals = notequal_exprt(
+          typecast_exprt(address_of_exprt(simple_struct_var), pointer_type(int_type)),
+          address_of_exprt(member_exprt(simple_struct_var, "y", int_type))
+      );
+      REQUIRE(simplify_expr(notequals, ns) == true_exprt());
+    }
+  }
+
+  WHEN("Comparing a pointers to the same union member")
+  {
+    THEN("Equality should simplify to true")
+    {
+      auto equals = equal_exprt(
+        address_of_exprt(member_exprt(simple_union_var, "x", int_type)),
+        address_of_exprt(member_exprt(simple_union_var, "x", int_type))
+      );
+      REQUIRE(simplify_expr(equals, ns) == true_exprt());
+    }
+
+    THEN("Inequality should simplify to false")
+    {
+      auto notequals = notequal_exprt(
+          address_of_exprt(member_exprt(simple_union_var, "x", int_type)),
+          address_of_exprt(member_exprt(simple_union_var, "x", int_type))
+      );
+      REQUIRE(simplify_expr(notequals, ns) == false_exprt());
+    }
+  }
+
+  WHEN("Comparing pointers to different union members")
+  {
+    THEN("Equality should simplify to true")
+    {
+      auto equals = equal_exprt(
+          address_of_exprt(member_exprt(simple_union_var, "x", int_type)),
+          address_of_exprt(member_exprt(simple_union_var, "y", int_type))
+      );
+      REQUIRE(simplify_expr(equals, ns) == true_exprt());
+    }
+    THEN("Inequality should simplify to false")
+    {
+      auto notequals = notequal_exprt(
+          address_of_exprt(member_exprt(simple_union_var, "x", int_type)),
+          address_of_exprt(member_exprt(simple_union_var, "y", int_type))
+      );
+      REQUIRE(simplify_expr(notequals, ns) == false_exprt());
+    }
+  }
+
+  WHEN("Comparing a pointer to union with a pointer to union member")
+  {
+    THEN("Equality should simplify to true")
+    {
+      auto equals = equal_exprt(
+          typecast_exprt(address_of_exprt(simple_union_var), pointer_type(int_type)),
+          address_of_exprt(member_exprt(simple_union_var, "x", int_type))
+      );
+      REQUIRE(simplify_expr(equals, ns) == true_exprt());
+    }
+    THEN("Inequality should simplify to false")
+    {
+      auto notequals = notequal_exprt(
+          typecast_exprt(address_of_exprt(simple_union_var), pointer_type(int_type)),
+          address_of_exprt(member_exprt(simple_union_var, "x", int_type))
+      );
+      REQUIRE(simplify_expr(notequals, ns) == false_exprt());
+    }
+  }
+}
