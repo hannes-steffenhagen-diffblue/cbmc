@@ -53,13 +53,13 @@ abstract_object_pointert abstract_environmentt::eval(
   {
     const symbol_exprt &symbol(to_symbol_expr(simplified_expr));
     const auto &symbol_entry=map.find(symbol);
-    if(symbol_entry==map.cend())
+    if(!symbol_entry.second)
     {
       return abstract_object_factory(simplified_expr.type(), ns, true);
     }
     else
     {
-      abstract_object_pointert found_symbol_value=symbol_entry->second;
+      abstract_object_pointert found_symbol_value=symbol_entry.first;
       return found_symbol_value;
     }
   }
@@ -208,7 +208,7 @@ bool abstract_environmentt::assign(
   {
     assert(s.id()==ID_symbol);
     const symbol_exprt &symbol_expr(to_symbol_expr(s));
-    if(map.find(symbol_expr)==map.end())
+    if(!map.find(symbol_expr).second)
     {
       lhs_value=abstract_object_factory(
         symbol_expr.type(), ns, true, false);
@@ -540,9 +540,9 @@ bool abstract_environmentt::merge(const abstract_environmentt &env)
     // For each element in the intersection of map and env.map merge
     // If the result of the merge is top, remove from the map
     bool modified=false;
-    for(const auto &entry : env.map)
+    for(const auto &entry : env.map.get_view())
     {
-      if(map.find(entry.first)!=map.end())
+      if(map.find(entry.first).second)
       {
         bool object_modified=false;
         abstract_object_pointert new_object=
@@ -683,10 +683,10 @@ void abstract_environmentt::output(
 {
   out << "{\n";
 
-  for(const auto &entry : map)
+  for(const auto &entry : map.get_view())
   {
     out << entry.first.get_identifier()
-        << " (" << ") -> ";
+        << " () -> ";
     entry.second->output(out, ai, ns);
 
     out << " @ ";
@@ -711,9 +711,9 @@ Function: abstract_environmentt::verify
 
 bool abstract_environmentt::verify() const
 {
-  for(const auto &entry : map)
+  for(const auto &entry : map.get_view())
   {
-    if(!entry.second)
+    if(entry.second == nullptr)
     {
       return false;
     }
@@ -773,10 +773,10 @@ std::vector<symbol_exprt> abstract_environmentt::modified_symbols(
 {
   // Find all symbols who have different write locations in each map
   std::vector<symbol_exprt> symbols_diff;
-  for (const auto &entry : first.map)
+  for (const auto &entry : first.map.get_view())
   {
     const auto &second_entry = second.map.find(entry.first);
-    if (second_entry != second.map.end())
+    if (second_entry.second)
     {
       // for the last written write locations to match
       // each location in one must be equal to precisely one location
@@ -786,7 +786,7 @@ std::vector<symbol_exprt> abstract_environmentt::modified_symbols(
       const abstract_objectt::locationst &first_write_locations=
         entry.second->get_last_written_locations();
       const abstract_objectt::locationst &second_write_locations=
-        second_entry->second->get_last_written_locations();
+        second_entry.first->get_last_written_locations();
 
       class location_ordert
       {
@@ -835,10 +835,10 @@ std::vector<symbol_exprt> abstract_environmentt::modified_symbols(
   }
 
   // Add any symbols that are only in the second map
-  for(const auto &entry : second.map)
+  for(const auto &entry : second.map.get_view())
   {
     const auto &second_entry = first.map.find(entry.first);
-    if (second_entry==first.map.end())
+    if (!second_entry.second)
     {
       symbols_diff.push_back(entry.first);
     }

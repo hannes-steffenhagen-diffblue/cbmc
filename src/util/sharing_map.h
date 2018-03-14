@@ -197,6 +197,12 @@ public:
   typedef std::vector<delta_view_itemt> delta_viewt;
 
   void get_view(viewt &view) const;
+  viewt get_view() const
+  {
+    viewt result;
+    get_view(result);
+    return result;
+  }
 
   void get_delta_view(
     const self_type &other,

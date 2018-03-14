@@ -135,6 +135,16 @@ public:
   }
 };
 
+namespace std {
+  template<> struct hash<::symbol_exprt>
+  {
+    size_t operator()(const ::symbol_exprt& sym)
+    {
+      return hash<string>()(sym.pretty());
+    }
+  };
+}
+
 /*! \brief Expression to hold a symbol (variable)
 */
 class decorated_symbol_exprt:public symbol_exprt
