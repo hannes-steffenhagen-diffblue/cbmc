@@ -128,6 +128,11 @@ public:
 
   const_find_type find(const key_type &k) const;
 
+  const_find_type const_find(const key_type &k) const
+  {
+    return find(k);
+  }
+
   mapped_type &at(
     const key_type &k,
     const tvt &key_exists=tvt::unknown());
@@ -197,6 +202,12 @@ public:
   typedef std::vector<delta_view_itemt> delta_viewt;
 
   void get_view(viewt &view) const;
+  viewt get_view() const
+  {
+    viewt result;
+    get_view(result);
+    return result;
+  }
 
   void get_delta_view(
     const self_type &other,
