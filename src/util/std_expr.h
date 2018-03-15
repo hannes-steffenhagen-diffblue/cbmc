@@ -140,7 +140,7 @@ namespace std {
   {
     size_t operator()(const ::symbol_exprt& sym)
     {
-      return hash<string>()(sym.pretty());
+      return hash<string>()(id2string(sym.get_identifier()));
     }
   };
 }
