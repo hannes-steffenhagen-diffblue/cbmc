@@ -552,13 +552,13 @@ void variable_sensitivity_domaint::merge_three_way_function_return(
   if(true)
   {
     const variable_sensitivity_domaint &cast_function_call=
-      static_cast<const variable_sensitivity_domaint &>(function_call);
+      dynamic_cast<const variable_sensitivity_domaint &>(function_call);
 
     const variable_sensitivity_domaint &cast_function_start=
-      static_cast<const variable_sensitivity_domaint &>(function_start);
+      dynamic_cast<const variable_sensitivity_domaint &>(function_start);
 
     const variable_sensitivity_domaint &cast_function_end=
-      static_cast<const variable_sensitivity_domaint &>(function_end);
+      dynamic_cast<const variable_sensitivity_domaint &>(function_end);
 
     const std::vector<symbol_exprt> &modified_symbols=
       cast_function_start.get_modified_symbols(cast_function_end);
