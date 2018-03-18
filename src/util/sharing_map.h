@@ -39,6 +39,11 @@ Author: Daniel Poetzl
   CV typename sharing_mapt<keyT, valueT, hashT, predT>::ST \
   sharing_mapt<keyT, valueT, hashT, predT>
 
+#define SHARING_MAPTV(R, V) \
+  template <class keyT, class valueT, class hashT, class predT> \
+  template <class V> \
+  R sharing_mapt<keyT, valueT, hashT, predT>
+
 template <
   class keyT,
   class valueT,
@@ -175,6 +180,17 @@ public:
 
   typedef std::pair<const key_type &, const mapped_type &> view_itemt;
   typedef std::vector<view_itemt> viewt;
+  typedef std::set<view_itemt> sorted_viewt;
+
+  void insert_view_item(viewt &v, view_itemt &&vi) const
+  {
+      v.push_back(vi);
+  }
+
+  void insert_view_item(sorted_viewt &v, view_itemt &&vi) const
+  {
+      v.insert(vi);
+  }
 
   class delta_view_itemt
   {
@@ -201,7 +217,7 @@ public:
 
   typedef std::vector<delta_view_itemt> delta_viewt;
 
-  void get_view(viewt &view) const;
+  template <class V> void get_view(V&) const;
   viewt get_view() const
   {
     viewt result;
@@ -214,6 +230,9 @@ public:
     delta_viewt &delta_view,
     const bool only_common=true) const;
 
+  delta_viewt get_delta_view(
+    const self_type &other, const bool only_common=true) const;
+
 protected:
   // helpers
 
@@ -225,7 +244,7 @@ protected:
   void gather_all(const node_type &n, delta_viewt &delta_view) const;
 };
 
-SHARING_MAPT(void)::get_view(viewt &view) const
+SHARING_MAPTV(void, view_type)::get_view(view_type &view) const
 {
   assert(view.empty());
 
@@ -245,7 +264,7 @@ SHARING_MAPT(void)::get_view(viewt &view) const
     {
       for(const auto &child : n->get_container())
       {
-        view.push_back(view_itemt(child.get_key(), child.get_value()));
+        insert_view_item(view, view_itemt(child.get_key(), child.get_value()));
       }
     }
     else
@@ -401,6 +420,15 @@ SHARING_MAPT(void)::get_delta_view(
     }
   }
   while(!stack.empty());
+}
+
+SHARING_MAPT2(, delta_viewt)::get_delta_view(
+  const self_type &other,
+  const bool only_common) const
+{
+  delta_viewt delta_view;
+  get_delta_view(other, delta_view, only_common);
+  return delta_view;
 }
 
 SHARING_MAPT2(, node_type *)::get_container_node(const key_type &k)
