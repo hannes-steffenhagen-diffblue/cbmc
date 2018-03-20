@@ -214,6 +214,15 @@ public:
     delta_viewt &delta_view,
     const bool only_common=true) const;
 
+  delta_viewt get_delta_view(
+    const self_type &other,
+    const bool only_common = true) const
+  {
+    delta_viewt result;
+    get_delta_view(other, result, only_common);
+    return result;
+  }
+
 protected:
   // helpers
 
