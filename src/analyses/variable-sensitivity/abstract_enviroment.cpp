@@ -487,7 +487,11 @@ bool abstract_environmentt::merge(const abstract_environmentt &env)
     {
       if(!entry.in_both)
       {
-        map[entry.k] = entry.m->make_top();
+        if(!entry.m->is_top())
+        {
+          map.find(entry.k, tvt(true)).first = entry.m->make_top();
+          modified = true;
+        }
       }
       else
       {
@@ -504,7 +508,7 @@ bool abstract_environmentt::merge(const abstract_environmentt &env)
           // object, even if it is TOP we still have useful information about it.
           // This is used for when we want to find out what has been modified
           // between two locations (even if we don't know what has been written).
-          map[entry.k]=new_object;
+          map.find(entry.k, tvt(true)).first = new_object;
         }
       }
     }
