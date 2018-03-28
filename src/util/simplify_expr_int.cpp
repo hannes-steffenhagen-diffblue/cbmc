@@ -383,6 +383,27 @@ bool simplify_exprt::simplify_div(exprt &expr)
       }
     }
   }
+  else if(expr.type().id() == ID_floatbv)
+  {
+    if(expr.op1().is_constant() &&
+        expr.op1().is_one())
+    {
+      exprt tmp;
+      tmp.swap(expr.op0());
+      expr.swap(tmp);
+      return false;
+    }
+    if(expr.op0().is_constant() &&
+        expr.op1().is_constant())
+    {
+      ieee_floatt f0, f1;
+      f0.from_expr(to_constant_expr(expr.op0()));
+      f1.from_expr(to_constant_expr(expr.op1()));
+      f0/=f1;
+      expr = f0.to_expr();
+      return false;
+    }
+  }
 
   return true;
 }

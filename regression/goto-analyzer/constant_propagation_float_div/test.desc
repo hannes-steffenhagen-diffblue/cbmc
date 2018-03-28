@@ -1,0 +1,6 @@
+CORE
+main.c
+--variable --verify
+^EXIT=0$
+^SIGNAL=0$
+\[main.assertion.1\] file main.c line 26 function main, assertion !g_out: Success
