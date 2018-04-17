@@ -9,10 +9,10 @@ Author: Daniel Kroening, kroening@kroening.com
 /// \file
 /// Symbolic Execution
 
-#ifndef CPROVER_GOTO_SYMEX_ADJUST_FLOAT_EXPRESSIONS_H
-#define CPROVER_GOTO_SYMEX_ADJUST_FLOAT_EXPRESSIONS_H
+#ifndef CPROVER_GOTO_PROGRAMS_ADJUST_FLOAT_EXPRESSIONS_H
+#define CPROVER_GOTO_PROGRAMS_ADJUST_FLOAT_EXPRESSIONS_H
 
-#include <goto-programs/goto_functions.h>
+#include "goto_functions.h"
 
 class exprt;
 class namespacet;
@@ -31,4 +31,4 @@ void adjust_float_expressions(
   const namespacet &ns);
 void adjust_float_expressions(goto_modelt &goto_model);
 
-#endif // CPROVER_GOTO_SYMEX_ADJUST_FLOAT_EXPRESSIONS_H
+#endif // CPROVER_GOTO_PROGRAMS_ADJUST_FLOAT_EXPRESSIONS_H

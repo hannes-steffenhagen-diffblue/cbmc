@@ -69,6 +69,7 @@ SRC = basic_blocks.cpp \
       wp.cpp \
       write_goto_binary.cpp \
       xml_goto_trace.cpp \
+			adjust_float_expressions.cpp \
       # Empty last line
 
 INCLUDES= -I ..

@@ -10,15 +10,15 @@ Author: Daniel Kroening, kroening@kroening.com
 /// Symbolic Execution
 
 #include "adjust_float_expressions.h"
+#include "goto_model.h"
 
 #include <util/cprover_prefix.h>
 #include <util/expr_util.h>
 #include <util/std_expr.h>
 #include <util/symbol.h>
 #include <util/ieee_float.h>
-#include <util/arith_tools.h>
 
-#include <goto-programs/goto_model.h>
+#include <util/arith_tools.h>
 
 static bool have_to_adjust_float_expressions(
   const exprt &expr,
