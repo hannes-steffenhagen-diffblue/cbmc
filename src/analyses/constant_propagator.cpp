@@ -21,6 +21,7 @@ Author: Peter Schrammel
 #include <util/cprover_prefix.h>
 
 #include <langapi/language_util.h>
+#include <goto-programs/adjust_float_expressions.h>
 
 void constant_propagator_domaint::assign_rec(
   valuest &values,
@@ -34,6 +35,7 @@ void constant_propagator_domaint::assign_rec(
   const symbol_exprt &s=to_symbol_expr(lhs);
 
   exprt tmp=rhs;
+  adjust_float_expressions(tmp, ns);
   values.replace_const(tmp);
   simplify(tmp, ns);
 
@@ -268,7 +270,8 @@ bool constant_propagator_domaint::ai_simplify(
   exprt &condition,
   const namespacet &ns) const
 {
-  bool b=values.replace_const.replace(condition);
+  adjust_float_expressions(condition, ns);
+  bool b = values.replace_const.replace(condition);
   b&=simplify(condition, ns);
 
   return b;
