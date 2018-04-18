@@ -22,6 +22,10 @@ Author: Peter Schrammel
 
 #include <langapi/language_util.h>
 #include <goto-programs/adjust_float_expressions.h>
+#include <util/ieee_float.h>
+
+#include <algorithm>
+#include <array>
 
 void constant_propagator_domaint::assign_rec(
   valuest &values,
@@ -509,7 +513,44 @@ bool constant_propagator_domaint::try_evaluate(
   exprt &expr,
   const namespacet &ns) const
 {
+  const irep_idt ID_rounding_mode = CPROVER_PREFIX "rounding_mode";
   adjust_float_expressions(expr, ns);
+
+  // if the current rounding mode is top we can
+  // still get a non-top result by trying all rounding
+  // modes and checking if the results are all the same
+  if(!values.is_constant(symbol_exprt(ID_rounding_mode)))
+  {
+    // NOLINTNEXTLINE(whitespace/braces)
+    auto rounding_modes = std::array<ieee_floatt::rounding_modet, 4>{
+      ieee_floatt::ROUND_TO_EVEN,
+      ieee_floatt::ROUND_TO_ZERO,
+      ieee_floatt::ROUND_TO_MINUS_INF,
+      ieee_floatt::ROUND_TO_PLUS_INF};
+    // instead of 4, we could write rounding_modes.size() here
+    // if we dropped Visual Studio 2013 support (no constexpr)
+    std::array<exprt, 4> possible_results;
+    for(std::size_t i = 0; i < possible_results.size(); ++i)
+    {
+      constant_propagator_domaint child(*this);
+      child.values.set_to(
+        ID_rounding_mode, from_integer(rounding_modes[i], integer_typet()));
+      possible_results[i] = expr;
+      if(child.try_evaluate(possible_results[i], ns))
+      {
+        return true;
+      }
+    }
+    for(auto const &possible_result : possible_results)
+    {
+      if(possible_result != possible_results.front())
+      {
+        return true;
+      }
+    }
+    expr = possible_results.front();
+    return false;
+  }
   bool did_not_change_anything = values.replace_const.replace(expr);
   did_not_change_anything &= simplify(expr, ns);
   return did_not_change_anything;
