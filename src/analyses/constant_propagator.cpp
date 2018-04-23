@@ -522,11 +522,11 @@ bool constant_propagator_domaint::try_evaluate(
   if(!values.is_constant(symbol_exprt(ID_rounding_mode)))
   {
     // NOLINTNEXTLINE(whitespace/braces)
-    auto rounding_modes = std::array<ieee_floatt::rounding_modet, 4>{
+    auto rounding_modes = std::array<ieee_floatt::rounding_modet, 4>{{
       ieee_floatt::ROUND_TO_EVEN,
       ieee_floatt::ROUND_TO_ZERO,
       ieee_floatt::ROUND_TO_MINUS_INF,
-      ieee_floatt::ROUND_TO_PLUS_INF};
+      ieee_floatt::ROUND_TO_PLUS_INF}};
     // instead of 4, we could write rounding_modes.size() here
     // if we dropped Visual Studio 2013 support (no constexpr)
     std::array<exprt, 4> possible_results;
