@@ -19,6 +19,27 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <util/simplify_expr.h>
 #include <util/std_expr.h>
 #include <util/arith_tools.h>
+#include <goto-programs/adjust_float_expressions.h>
+#include <iostream>
+
+static inline
+void swap_symbol_for_expr(exprt &in_expr, const irep_idt& symbol, const exprt& symbol_value)
+{
+  if(in_expr.id() == ID_symbol)
+  {
+    if(to_symbol_expr(in_expr).get_identifier() == symbol)
+    {
+      in_expr = symbol_value;
+    }
+  }
+  else
+  {
+    for(auto& op : in_expr.operands())
+    {
+      swap_symbol_for_expr(op, symbol, symbol_value);
+    }
+  }
+}
 
 void interval_domaint::output(
   std::ostream &out,
@@ -74,7 +95,7 @@ void interval_domaint::transform(
     break;
 
   case ASSIGN:
-    assign(to_code_assign(instruction.code));
+    assign(to_code_assign(instruction.code), ns);
     break;
 
   case GOTO:
@@ -182,10 +203,59 @@ bool interval_domaint::join(
   return result;
 }
 
-void interval_domaint::assign(const code_assignt &code_assign)
+void interval_domaint::assign(const class code_assignt &code_assign, const namespacet &ns)
 {
+
+  auto const rounding_mode_it = int_map.find(CPROVER_PREFIX "rounding_mode");
+  std::array<ieee_floatt::rounding_modet, 4> rounding_modes = {
+    { ieee_floatt::ROUND_TO_EVEN,
+      ieee_floatt::ROUND_TO_MINUS_INF,
+      ieee_floatt::ROUND_TO_PLUS_INF,
+      ieee_floatt::ROUND_TO_ZERO
+    }};
+  mp_integer min_rounding_mode;
+  mp_integer max_rounding_mode;
+  if(rounding_mode_it != int_map.end())
+  {
+    auto const &rounding_mode_interval = rounding_mode_it->second;
+    min_rounding_mode = rounding_mode_interval.lower_set ?
+                        rounding_mode_interval.lower :
+                        0;
+    max_rounding_mode = rounding_mode_interval.upper_set ?
+                        rounding_mode_interval.upper :
+                        rounding_modes.size()-1;
+  } else {
+    min_rounding_mode = 0;
+    max_rounding_mode = rounding_modes.size() - 1;
+  }
+
+  interval_domaint result_domain;
+  for(auto rounding_mode = min_rounding_mode;
+      rounding_mode <= max_rounding_mode;
+      ++rounding_mode)
+  {
+    auto current_rounding_mode = static_cast<ieee_floatt::rounding_modet>(rounding_mode.to_ulong());
+    exprt lhs_tmp = code_assign.lhs();
+    exprt rhs_tmp = code_assign.rhs();
+
+    adjust_float_expressions(lhs_tmp, ns);
+    adjust_float_expressions(rhs_tmp, ns);
+
+    swap_symbol_for_expr(lhs_tmp, CPROVER_PREFIX"rounding_mode", from_integer(current_rounding_mode, integer_typet()));
+    swap_symbol_for_expr(rhs_tmp, CPROVER_PREFIX"rounding_mode", from_integer(current_rounding_mode, integer_typet()));
+
+    const exprt simplified_lhs = simplify_expr(lhs_tmp, ns);
+    const exprt simplified_rhs = simplify_expr(rhs_tmp, ns);
+
+    interval_domaint tmp_domain(*this);
+    tmp_domain.havoc_rec(simplified_lhs);
+    tmp_domain.assume_rec(simplified_lhs, ID_equal, simplified_rhs);
+    result_domain.join(tmp_domain);
+  }
+
   havoc_rec(code_assign.lhs());
   assume_rec(code_assign.lhs(), ID_equal, code_assign.rhs());
+  *this = result_domain;
 }
 
 void interval_domaint::havoc_rec(const exprt &lhs)
@@ -241,7 +311,7 @@ void interval_domaint::assume_rec(
   assert(id==ID_lt || id==ID_le);
 
   #ifdef DEBUG
-  std::cout << "assume_rec: "
+  // std::cout << "assume_rec: "
             << from_expr(lhs) << " " << id << " "
             << from_expr(rhs) << "\n";
   #endif
@@ -328,7 +398,49 @@ void interval_domaint::assume(
   const exprt &cond,
   const namespacet &ns)
 {
-  assume_rec(simplify_expr(cond, ns), false);
+  auto const rounding_mode_it = int_map.find(CPROVER_PREFIX "rounding_mode");
+  std::array<ieee_floatt::rounding_modet, 4> rounding_modes = {
+    { ieee_floatt::ROUND_TO_EVEN,
+      ieee_floatt::ROUND_TO_MINUS_INF,
+      ieee_floatt::ROUND_TO_PLUS_INF,
+      ieee_floatt::ROUND_TO_ZERO
+    }};
+  mp_integer min_rounding_mode;
+  mp_integer max_rounding_mode;
+  if(rounding_mode_it != int_map.end())
+  {
+    auto const &rounding_mode_interval = rounding_mode_it->second;
+    min_rounding_mode = rounding_mode_interval.lower_set ?
+                             rounding_mode_interval.lower :
+                             0;
+    max_rounding_mode = rounding_mode_interval.upper_set ?
+                             rounding_mode_interval.upper :
+                             rounding_modes.size()-1;
+  } else {
+    min_rounding_mode = 0;
+    max_rounding_mode = rounding_modes.size() - 1;
+  }
+
+  for(auto rounding_mode = min_rounding_mode;
+      rounding_mode <= max_rounding_mode;
+      ++rounding_mode)
+  {
+    auto current_rounding_mode = static_cast<ieee_floatt::rounding_modet>(rounding_mode.to_ulong());
+    exprt cond_tmp = cond;
+    adjust_float_expressions(cond_tmp, ns);
+    // std::cout << "DEBAHG (expression before eval):" << tmp.pretty() << std::endl;
+    swap_symbol_for_expr(cond_tmp, CPROVER_PREFIX"rounding_mode", from_integer(current_rounding_mode, integer_typet()));
+    interval_domaint tmp_domain(*this);
+    const exprt &simplified = simplify_expr(cond_tmp, ns);
+    std::cout << simplified.pretty() << std::endl;
+    // std::cout << "DEBAHG (eval'ed expression):" << simplified.pretty() << std::endl;
+    tmp_domain.assume_rec(simplified, false);
+    ait<interval_domaint> ai;
+
+    // std::cout << "DEBAHG (dump domain):" << std::endl;
+    tmp_domain.output(std::cout, ai, ns);
+    this->join(tmp_domain);
+  }
 }
 
 void interval_domaint::assume_rec(
