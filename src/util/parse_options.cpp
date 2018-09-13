@@ -71,12 +71,11 @@ int parse_options_baset::main()
 
     return doit();
   }
-  catch(invalid_user_input_exceptiont &e)
+  catch(const cprover_exceptiont &e)
   {
     std::cerr << e.what() << "\n";
     return CPROVER_EXIT_USAGE_ERROR;
   }
-  return CPROVER_EXIT_SUCCESS;
 }
 
 std::string
