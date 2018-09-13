@@ -1,3 +1,5 @@
+#include <utility>
+
 /*******************************************************************\
 
 Module: Get a Goto Program
@@ -22,6 +24,7 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <langapi/language.h>
 
 #include <goto-programs/rebuild_goto_start_function.h>
+#include <util/exception_utils.h>
 
 #include "goto_convert_functions.h"
 #include "read_goto_binary.h"
@@ -34,8 +37,9 @@ goto_modelt initialize_goto_model(
   const std::vector<std::string> &files=cmdline.args;
   if(files.empty())
   {
-    msg.error() << "Please provide a program" << messaget::eom;
-    throw 0;
+    throw invalid_user_input_exceptiont("missing program argument",
+      "",
+      "one or more paths to program files");
   }
 
   std::vector<std::string> binaries, sources;
@@ -67,9 +71,7 @@ goto_modelt initialize_goto_model(
 
       if(!infile)
       {
-        msg.error() << "failed to open input file `" << filename
-          << '\'' << messaget::eom;
-        throw 0;
+        throw io_exceptiont("Failed to open input file `" + filename + '\'');
       }
 
       language_filet &lf=language_files.add_file(filename);
@@ -77,11 +79,10 @@ goto_modelt initialize_goto_model(
 
       if(lf.language==nullptr)
       {
+
         source_locationt location;
         location.set_file(filename);
-        msg.error().source_location=location;
-        msg.error() << "failed to figure out type of file" << messaget::eom;
-        throw 0;
+        throw goto_model_initialization_errort("Failed to figure out type of file", location);
       }
 
       languaget &language=*lf.language;
@@ -92,8 +93,8 @@ goto_modelt initialize_goto_model(
 
       if(language.parse(infile, filename))
       {
-        msg.error() << "PARSING ERROR" << messaget::eom;
-        throw 0;
+        // FIXME not a super helpful message
+        throw goto_model_initialization_errort("PARSING ERROR");
       }
 
       lf.get_modules();
@@ -103,8 +104,7 @@ goto_modelt initialize_goto_model(
 
     if(language_files.typecheck(goto_model.symbol_table))
     {
-      msg.error() << "CONVERSION ERROR" << messaget::eom;
-      throw 0;
+      throw goto_model_initialization_errort("CONVERSION ERROR");
     }
   }
 
@@ -112,8 +112,9 @@ goto_modelt initialize_goto_model(
   {
     msg.status() << "Reading GOTO program from file" << messaget::eom;
 
-    if(read_object_and_link(file, goto_model, message_handler))
-      throw 0;
+    if(read_object_and_link(file, goto_model, message_handler)) {
+      throw goto_model_initialization_errort("failed to read object or link in file `" + file + '\'');
+    }
   }
 
   bool binaries_provided_start=
@@ -150,14 +151,13 @@ goto_modelt initialize_goto_model(
 
   if(entry_point_generation_failed)
   {
-    msg.error() << "SUPPORT FUNCTION GENERATION ERROR" << messaget::eom;
-    throw 0;
+    // FIXME more helpful error message?
+    throw goto_model_initialization_errort("SUPPORT FUNCTION GENERATION ERROR");
   }
 
   if(language_files.final(goto_model.symbol_table))
   {
-    msg.error() << "FINAL STAGE CONVERSION ERROR" << messaget::eom;
-    throw 0;
+    throw goto_model_initialization_errort("FINAL STAGE CONVERSION ERROR");
   }
 
   msg.status() << "Generating GOTO Program" << messaget::eom;
@@ -172,4 +172,23 @@ goto_modelt initialize_goto_model(
     goto_model.symbol_table);
 
   return goto_model;
+}
+
+goto_model_initialization_errort::goto_model_initialization_errort(std::string message)
+  : goto_model_initialization_errort(std::move(message), source_locationt())
+{}
+
+std::string goto_model_initialization_errort::what() const noexcept {
+  std::string what_msg = message;
+  if(source_location.is_not_nil())
+  {
+    what_msg += "\nsource location: " + source_location.as_string();
+  }
+  return what_msg;
+}
+
+goto_model_initialization_errort::goto_model_initialization_errort(std::string message, source_locationt source_location)
+  : message(std::move(message)), source_location(std::move(source_location))
+{
+
 }
