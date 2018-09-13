@@ -11,7 +11,13 @@ Author: Fotis Koutoulakis, fotis.koutoulakis@diffblue.com
 
 #include <string>
 
-class invalid_user_input_exceptiont
+class cprover_exceptiont
+{
+public:
+  virtual std::string what() const noexcept = 0;
+};
+
+class invalid_user_input_exceptiont : public cprover_exceptiont
 {
   /// The reason this exception was generated.
   std::string reason;
@@ -30,7 +36,16 @@ public:
   {
   }
 
-  std::string what() const noexcept;
+  std::string what() const noexcept override;
+};
+
+class io_exceptiont : cprover_exceptiont
+{
+public:
+  explicit io_exceptiont(std::string message);
+  std::string what() const noexcept override;
+private:
+  std::string message;
 };
 
 #endif // CPROVER_UTIL_EXCEPTION_UTILS_H

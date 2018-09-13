@@ -18,3 +18,13 @@ std::string invalid_user_input_exceptiont::what() const noexcept
   res += correct_input + "\n";
   return res;
 }
+
+std::string io_exceptiont::what() const noexcept {
+  return message;
+}
+
+io_exceptiont::io_exceptiont(std::string message)
+  : message(std::move(message))
+{
+
+}
