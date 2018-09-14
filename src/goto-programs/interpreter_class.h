@@ -23,6 +23,7 @@ Author: Daniel Kroening, kroening@kroening.com
 #include "goto_functions.h"
 #include "goto_trace.h"
 #include "json_goto_trace.h"
+#include "interpreter.h"
 
 class interpretert:public messaget
 {
@@ -279,8 +280,9 @@ protected:
   {
     mp_vectort v;
     evaluate(expr, v);
+    // FIXME not sure if this can happen
     if(v.size()!=1)
-      throw "invalid boolean value";
+      throw interpreter_errort("invalid boolean value");
     return v.front()!=0;
   }
 
