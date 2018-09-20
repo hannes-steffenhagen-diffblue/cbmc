@@ -19,7 +19,7 @@ Author: Daniel Kroening, kroening@kroening.com
 
 #include "goto_model.h"
 
-class interpreter_errort : public cprover_exceptiont
+class interpreter_errort : public cprover_exception_baset
 {
 public:
   explicit interpreter_errort(std::string message);

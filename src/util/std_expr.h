@@ -18,6 +18,8 @@ Author: Daniel Kroening, kroening@kroening.com
 #include "mathematical_types.h"
 #include "std_types.h"
 
+#include "c_types.h"
+
 /// Transition system, consisting of state invariant, initial state predicate,
 /// and transition predicate.
 class transt:public exprt
