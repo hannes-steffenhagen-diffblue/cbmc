@@ -342,6 +342,9 @@ int run(
     }
     else /* fork() returns new pid to the parent process */
     {
+      // must do before resuming signals to avoid race
+      register_child(childpid);
+
       // resume signals
       sigprocmask(SIG_SETMASK, &old_mask, nullptr);
 
@@ -349,10 +352,13 @@ int run(
 
       /* wait for child to exit, and store its status */
       while(waitpid(childpid, &status, 0)==-1)
+      {
         if(errno==EINTR)
           continue; // try again
         else
         {
+          unregister_child();
+
           perror("Waiting for child process failed");
           if(stdin_fd!=STDIN_FILENO)
             close(stdin_fd);
@@ -362,6 +368,9 @@ int run(
             close(stderr_fd);
           return 1;
         }
+      }
+
+      unregister_child();
 
       if(stdin_fd!=STDIN_FILENO)
         close(stdin_fd);
@@ -390,6 +399,80 @@ int run(
 #endif
 }
 
+/// quote a string for bash and CMD
+static std::string shell_quote(const std::string &src)
+{
+  #ifdef _WIN32
+  // first check if quoting is needed at all
+
+  if(src.find(' ')==std::string::npos &&
+     src.find('"')==std::string::npos &&
+     src.find('&')==std::string::npos &&
+     src.find('|')==std::string::npos &&
+     src.find('(')==std::string::npos &&
+     src.find(')')==std::string::npos &&
+     src.find('<')==std::string::npos &&
+     src.find('>')==std::string::npos &&
+     src.find('^')==std::string::npos)
+  {
+    // seems fine -- return as is
+    return src;
+  }
+
+  std::string result;
+
+  result+='"';
+
+  for(const char ch : src)
+  {
+    if(ch=='"')
+      result+='"'; // quotes are doubled
+    result+=ch;
+  }
+
+  result+='"';
+
+  return result;
+
+  #else
+
+  // first check if quoting is needed at all
+
+  if(src.find(' ')==std::string::npos &&
+     src.find('"')==std::string::npos &&
+     src.find('*')==std::string::npos &&
+     src.find('$')==std::string::npos &&
+     src.find('\\')==std::string::npos &&
+     src.find('?')==std::string::npos &&
+     src.find('&')==std::string::npos &&
+     src.find('|')==std::string::npos &&
+     src.find('>')==std::string::npos &&
+     src.find('<')==std::string::npos &&
+     src.find('^')==std::string::npos &&
+     src.find('\'')==std::string::npos)
+  {
+    // seems fine -- return as is
+    return src;
+  }
+
+  std::string result;
+
+  // the single quotes catch everything but themselves!
+  result+='\'';
+
+  for(const char ch : src)
+  {
+    if(ch=='\'')
+      result+="'\\''";
+    result+=ch;
+  }
+
+  result+='\'';
+
+  return result;
+  #endif
+}
+
 int run(
   const std::string &what,
   const std::vector<std::string> &argv,
@@ -397,6 +480,7 @@ int run(
   std::ostream &std_output,
   const std::string &std_error)
 {
+  #ifdef _WIN32
   temporary_filet tmpi("tmp.stdout", "");
 
   int result = run(what, argv, std_input, tmpi(), std_error);
@@ -407,4 +491,23 @@ int run(
     std_output << instream.rdbuf(); // copy
 
   return result;
+  #else
+  std::string command;
+
+  for(const auto &arg : argv)
+    command += " " + shell_quote(arg);
+
+  FILE *stream=popen(command.c_str(), "r");
+
+  if(stream!=nullptr)
+  {
+    int ch;
+    while((ch=fgetc(stream))!=EOF)
+      std_output << (unsigned char)ch;
+
+    return pclose(stream);
+  }
+  else
+    return -1;
+  #endif
 }

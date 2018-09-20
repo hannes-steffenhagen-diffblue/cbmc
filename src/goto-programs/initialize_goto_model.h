@@ -19,7 +19,7 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <string>
 #include <util/exception_utils.h>
 
-class goto_model_initialization_errort : public cprover_exceptiont
+class goto_model_initialization_errort : public cprover_exception_baset
 {
 public:
   explicit goto_model_initialization_errort(std::string message);

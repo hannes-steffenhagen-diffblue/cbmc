@@ -20,7 +20,6 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <util/unicode.h>
 
 #include <langapi/mode.h>
-#include <langapi/language_ui.h>
 #include <langapi/language.h>
 
 #include <goto-programs/rebuild_goto_start_function.h>
@@ -71,7 +70,8 @@ goto_modelt initialize_goto_model(
 
       if(!infile)
       {
-        throw io_exceptiont("Failed to open input file `" + filename + '\'');
+        throw system_exceptiont(
+          "failed to open input file `" + filename + '\'');
       }
 
       language_filet &lf=language_files.add_file(filename);
@@ -82,7 +82,8 @@ goto_modelt initialize_goto_model(
 
         source_locationt location;
         location.set_file(filename);
-        throw goto_model_initialization_errort("Failed to figure out type of file", location);
+        throw goto_model_initialization_errort(
+          "failed to figure out type of file", location);
       }
 
       languaget &language=*lf.language;
@@ -93,8 +94,7 @@ goto_modelt initialize_goto_model(
 
       if(language.parse(infile, filename))
       {
-        // FIXME not a super helpful message
-        throw goto_model_initialization_errort("PARSING ERROR");
+        throw goto_model_initialization_errort("language parsing failed");
       }
 
       lf.get_modules();
@@ -104,7 +104,8 @@ goto_modelt initialize_goto_model(
 
     if(language_files.typecheck(goto_model.symbol_table))
     {
-      throw goto_model_initialization_errort("CONVERSION ERROR");
+      throw goto_model_initialization_errort(
+        "type-checking of interfaces/files/modules failed");
     }
   }
 
@@ -113,7 +114,8 @@ goto_modelt initialize_goto_model(
     msg.status() << "Reading GOTO program from file" << messaget::eom;
 
     if(read_object_and_link(file, goto_model, message_handler)) {
-      throw goto_model_initialization_errort("failed to read object or link in file `" + file + '\'');
+      throw goto_model_initialization_errort(
+        "failed to read object or link in file `" + file + '\'');
     }
   }
 
@@ -151,13 +153,13 @@ goto_modelt initialize_goto_model(
 
   if(entry_point_generation_failed)
   {
-    // FIXME more helpful error message?
-    throw goto_model_initialization_errort("SUPPORT FUNCTION GENERATION ERROR");
+    throw goto_model_initialization_errort("failed to generate entry point");
   }
 
   if(language_files.final(goto_model.symbol_table))
   {
-    throw goto_model_initialization_errort("FINAL STAGE CONVERSION ERROR");
+    throw goto_model_initialization_errort(
+      "failed to finish final conversion adjustments");
   }
 
   msg.status() << "Generating GOTO Program" << messaget::eom;

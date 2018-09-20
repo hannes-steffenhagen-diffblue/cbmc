@@ -8,6 +8,7 @@ Author: Daniel Kroening, kroening@kroening.com
 
 #include "replace_symbol.h"
 
+#include "expr_util.h"
 #include "invariant.h"
 #include "std_expr.h"
 #include "std_types.h"
@@ -165,14 +166,9 @@ bool replace_symbolt::replace(typet &dest) const
      dest.id()==ID_union)
   {
     struct_union_typet &struct_union_type=to_struct_union_type(dest);
-    struct_union_typet::componentst &components=
-      struct_union_type.components();
 
-    for(struct_union_typet::componentst::iterator
-        it=components.begin();
-        it!=components.end();
-        it++)
-      if(!replace(*it))
+    for(auto &c : struct_union_type.components())
+      if(!replace(c))
         result=false;
   }
   else if(dest.id()==ID_code)
@@ -180,11 +176,9 @@ bool replace_symbolt::replace(typet &dest) const
     code_typet &code_type=to_code_type(dest);
     if(!replace(code_type.return_type()))
       result = false;
-    code_typet::parameterst &parameters=code_type.parameters();
-    for(code_typet::parameterst::iterator it = parameters.begin();
-        it!=parameters.end();
-        it++)
-      if(!replace(*it))
+
+    for(auto &p : code_type.parameters())
+      if(!replace(p))
         result=false;
   }
   else if(dest.id()==ID_array)
@@ -216,14 +210,8 @@ bool replace_symbolt::have_to_replace(const typet &dest) const
     const struct_union_typet &struct_union_type=
       to_struct_union_type(dest);
 
-    const struct_union_typet::componentst &components=
-      struct_union_type.components();
-
-    for(struct_union_typet::componentst::const_iterator
-        it=components.begin();
-        it!=components.end();
-        it++)
-      if(have_to_replace(*it))
+    for(const auto &c : struct_union_type.components())
+      if(have_to_replace(c))
         return true;
   }
   else if(dest.id()==ID_code)
@@ -232,13 +220,8 @@ bool replace_symbolt::have_to_replace(const typet &dest) const
     if(have_to_replace(code_type.return_type()))
       return true;
 
-    const code_typet::parameterst &parameters=code_type.parameters();
-
-    for(code_typet::parameterst::const_iterator
-        it=parameters.begin();
-        it!=parameters.end();
-        it++)
-      if(have_to_replace(*it))
+    for(const auto &p : code_type.parameters())
+      if(have_to_replace(p))
         return true;
   }
   else if(dest.id()==ID_array)
@@ -340,7 +323,7 @@ bool address_of_aware_replace_symbolt::replace_symbol_expr(
 
   const exprt &e = it->second;
 
-  if(require_lvalue && e.is_constant()) // Would give non l-value.
+  if(require_lvalue && !is_lvalue(e))
     return true;
 
   static_cast<exprt &>(s) = e;

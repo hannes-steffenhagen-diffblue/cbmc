@@ -280,9 +280,7 @@ protected:
   {
     mp_vectort v;
     evaluate(expr, v);
-    // FIXME not sure if this can happen
-    if(v.size()!=1)
-      throw interpreter_errort("invalid boolean value");
+    INVARIANT(v.size() == 1, "expression cannot be evaluated to a Boolean");
     return v.front()!=0;
   }
 
