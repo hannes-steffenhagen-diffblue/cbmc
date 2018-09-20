@@ -77,7 +77,6 @@ literalt boolbvt::convert_verilog_case_equality(
   const bvt &lhs_bv = convert_bv(expr.lhs());
   const bvt &rhs_bv = convert_bv(expr.rhs());
 
-  // FIXME no diagnostics in invariants
   DATA_INVARIANT_WITH_DIAGNOSTICS(
     lhs_bv.size() == rhs_bv.size(),
     "bitvector arguments to verilog_case_equality should have the same size",

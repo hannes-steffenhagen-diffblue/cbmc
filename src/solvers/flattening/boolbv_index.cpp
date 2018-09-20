@@ -176,8 +176,8 @@ bvt boolbvt::convert_index(const index_exprt &expr)
 
         INVARIANT(
           it != array.operands().end(),
-          "This loop iterates over the array, so `it` shouldn't be increased "
-          "past the arrays end");
+          "this loop iterates over the array, so `it` shouldn't be increased "
+          "past the array's end");
 
         value_equality.rhs()=*it++;
 
@@ -256,7 +256,7 @@ bvt boolbvt::convert_index(const index_exprt &expr)
 
       typet constant_type=index.type(); // type of index operand
 
-      DATA_INVARIANT(array_size > 0, "Array sizes are expected to be positive");
+      DATA_INVARIANT(array_size > 0, "array sizes are expected to be positive");
 
       for(mp_integer i=0; i<array_size; i=i+1)
       {

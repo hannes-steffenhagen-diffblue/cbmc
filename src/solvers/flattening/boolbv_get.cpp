@@ -38,7 +38,8 @@ exprt boolbvt::get(const exprt &expr) const
       std::size_t width=map_entry.width;
       DATA_INVARIANT(
         map_entry.width <= map_entry.literal_map.size(),
-        "I'm not sure what exactly these mean");
+        "literal width must be less than equal to that returned from SAT "
+        "solver");
       bv.resize(width);
       unknown.resize(width);
 

@@ -15,9 +15,11 @@ bvt boolbvt::convert_div(const div_exprt &div_expr)
   if(
     div_expr.type().id() != ID_unsignedbv &&
     div_expr.type().id() != ID_signedbv && div_expr.type().id() != ID_fixedbv)
+  {
     return conversion_failed(div_expr);
+  }
 
-  std::size_t bv_width = boolbv_width(div_expr.type());
+  const std::size_t bv_width = boolbv_width(div_expr.type());
 
   if(bv_width == 0)
     return conversion_failed(div_expr);
@@ -25,7 +27,9 @@ bvt boolbvt::convert_div(const div_exprt &div_expr)
   if(
     div_expr.dividend().type().id() != div_expr.type().id() ||
     div_expr.divisor().type().id() != div_expr.type().id())
+  {
     return conversion_failed(div_expr);
+  }
 
   bvt dividend = convert_bv(div_expr.dividend());
   bvt divisor = convert_bv(div_expr.divisor());

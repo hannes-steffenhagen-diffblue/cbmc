@@ -126,7 +126,7 @@ bvt boolbvt::convert_floatbv_op(const exprt &expr)
 
       DATA_INVARIANT(
         sub_width > 0 && (width % sub_width) > 0,
-        "Widths need to be positive, and subtype width should be a multiple of "
+        "widths need to be positive, and subtype width should be a multiple of "
         "the types width");
 
       std::size_t size=width/sub_width;
@@ -157,12 +157,12 @@ bvt boolbvt::convert_floatbv_op(const exprt &expr)
 
         INVARIANT(
           sub_result_bv.size() == sub_width,
-          "As we have created operands with the right width the result should "
+          "as we have created operands with the right width the result should "
           "have the right width as well");
         INVARIANT(
           i * sub_width + sub_width - 1 < result_bv.size(),
-          "Because the sub width is an exact multiple of the overall width, we "
-          "won't overlap the end of the result bitvector");
+          "because the subtype width is an exact multiple of the overall "
+          "width, we won't overlap the end of the result bitvector");
         std::copy(
           sub_result_bv.begin(),
           sub_result_bv.end(),

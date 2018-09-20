@@ -30,12 +30,12 @@ bvt boolbvt::convert_extractbits(const extractbits_exprt &expr)
 
   DATA_INVARIANT_WITH_DIAGNOSTICS(
     upper_as_int >= 0 && upper_as_int < src_bv.size(),
-    "The upper limit of a selectbits expression is in range",
+    "the upper limit of a selectbits expression is in range",
     irep_pretty_diagnosticst{expr});
 
   DATA_INVARIANT_WITH_DIAGNOSTICS(
     lower_as_int >= 0 && lower_as_int < src_bv.size(),
-    "The lower limit of a selectbits expression is in range",
+    "the lower limit of a selectbits expression is in range",
     irep_pretty_diagnosticst{expr});
 
   if(lower_as_int > upper_as_int)
@@ -43,12 +43,12 @@ bvt boolbvt::convert_extractbits(const extractbits_exprt &expr)
 
   INVARIANT(
     lower_as_int <= upper_as_int,
-    "as established by above swap, necessary for the logic below");
+    "the lower limit of selectbits is higher than the upper limit");
 
   auto const total_width = upper_as_int - lower_as_int + 1;
   DATA_INVARIANT_WITH_DIAGNOSTICS(
     total_width == target_bv_width,
-    "The number of extracted bits should match the width of the type the bits "
+    "the number of extracted bits should match the width of the type the bits "
     "are being extracted to",
     irep_pretty_diagnosticst{expr});
 
