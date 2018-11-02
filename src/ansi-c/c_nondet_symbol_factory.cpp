@@ -219,7 +219,6 @@ void symbol_factoryt::gen_nondet_init(
       }
     }
   }
-  // TODO(OJones): Add support for structs and arrays
   else
   {
     // If type is a ID_c_bool then add the following code to assignments:
