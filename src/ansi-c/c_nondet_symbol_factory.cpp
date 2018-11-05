@@ -206,14 +206,15 @@ void symbol_factoryt::gen_nondet_init(
     auto const &array_type = to_array_type(type);
     auto const &size = array_type.size();
     auto const &element_type = array_type.subtype();
-    if(size.is_not_nil())
+    if(size.is_not_nil()) // TODO what if it is?
     {
+      auto const &size_type = size.type();
       auto const size_as_int = numeric_cast_v<mp_integer>(size);
       DATA_INVARIANT(size_as_int >= 0, "array sizes can't be negative");
       for(auto index = mp_integer(0); index < size_as_int; ++index)
       {
         index_exprt index_expr(
-          expr, from_integer(index, element_type), element_type);
+          expr, from_integer(index, size_type), element_type);
         index_expr.add_source_location() = expr.source_location();
         gen_nondet_init(assignments, index_expr, depth, recursion_set);
       }
