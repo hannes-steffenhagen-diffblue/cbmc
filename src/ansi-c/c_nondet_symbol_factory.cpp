@@ -18,6 +18,7 @@ Author: Diffblue Ltd.
 #include <util/fresh_symbol.h>
 #include <util/namespace.h>
 #include <util/nondet_bool.h>
+#include <util/std_code.h>
 #include <util/std_expr.h>
 #include <util/std_types.h>
 #include <util/string_constant.h>
@@ -60,6 +61,7 @@ public:
     recursion_sett recursion_set = recursion_sett());
 
 private:
+  symbolt &new_tmp_symbol(const typet &type, const std::string &prefix);
   void gen_nondet_array_init(
     code_blockt &assignments,
     const exprt &expr,
@@ -127,6 +129,96 @@ void symbol_factoryt::gen_nondet_init(
 
   if(type.id()==ID_pointer)
   {
+    if(expr.id() == ID_symbol)
+    {
+      // Create code like this:
+      // size_t cond;
+      // size_t actual_size;
+      // T* array;
+      // if(cond < 1) {
+      //   actual_size = 1;
+      //   array = calloc(actual_size, sizeof(T));
+      //   for(size_t i = 0; i < actual_size; ++i) {
+      //      array[i] = nondet();
+      //   }
+      // } else if(cond < 2) {
+      //   ....
+      // }
+      // ...
+      // else {
+      //   actual_size = max_array_size;
+      //   ...
+      // }
+      auto const max_array_size = std::size_t{10};
+      auto const &symbol_expr = to_symbol_expr(expr);
+      const auto &array_name = symbol_expr.get_identifier();
+      if(object_factory_params.should_be_treated_as_array(array_name))
+      {
+        auto const &size_cond_symbol = new_tmp_symbol(size_type(), "size_cond");
+        auto const &size_symbol = new_tmp_symbol(size_type(), "size");
+
+        auto const &element_type = symbol_expr.type().subtype();
+        code_ifthenelset initialization_if_then_else;
+        auto *current_if_then_else = &initialization_if_then_else;
+
+        for(std::size_t i = 1; i < max_array_size; ++i)
+        {
+          auto const &array_size = from_integer(i, size_type());
+          auto array_type = array_typet{element_type, array_size};
+
+          auto &static_array = new_tmp_symbol(
+            array_type, id2string(array_name) + "_" + std::to_string(i));
+          static_array.is_static_lifetime = true;
+
+          const constant_exprt &size_expr = array_size;
+
+          current_if_then_else->cond() = binary_exprt(
+            size_cond_symbol.symbol_expr(), ID_lt, size_expr, bool_typet{});
+          code_blockt then_case;
+          then_case.add(code_assignt(size_symbol.symbol_expr(), size_expr));
+          gen_nondet_array_init(
+            then_case, static_array.symbol_expr(), depth, recursion_set);
+          then_case.add(code_assignt{
+            expr,
+            address_of_exprt{index_exprt{static_array.symbol_expr(),
+                                         from_integer(0, size_type()),
+                                         array_type.subtype()},
+                             pointer_type(array_type.subtype())}});
+          current_if_then_else->then_case() = then_case;
+          if(i + 1 < max_array_size)
+          {
+            current_if_then_else->else_case() = code_ifthenelset{};
+            current_if_then_else = reinterpret_cast<code_ifthenelset *>(
+              &current_if_then_else->else_case());
+          }
+          else
+          {
+            // generate an else case instead of another if on the final case
+            auto const &array_size = from_integer(i + 1, size_type());
+            auto array_type = array_typet{element_type, array_size};
+
+            auto &static_array = new_tmp_symbol(
+              array_type, id2string(array_name) + "_" + std::to_string(i + 1));
+            static_array.is_static_lifetime = true;
+
+            const constant_exprt &size_expr = array_size;
+            code_blockt else_case;
+            else_case.add(code_assignt(size_symbol.symbol_expr(), size_expr));
+            gen_nondet_array_init(
+              else_case, static_array.symbol_expr(), depth, recursion_set);
+            else_case.add(code_assignt{
+              expr,
+              address_of_exprt{index_exprt{static_array.symbol_expr(),
+                                           from_integer(0, size_type()),
+                                           array_type.subtype()},
+                               pointer_type(array_type.subtype())}});
+            current_if_then_else->else_case() = else_case;
+          }
+        }
+        assignments.add(initialization_if_then_else);
+        return;
+      }
+    }
     // dereferenced type
     const pointer_typet &pointer_type=to_pointer_type(type);
     const typet &subtype=ns.follow(pointer_type.subtype());
@@ -244,6 +336,20 @@ void symbol_factoryt::gen_nondet_array_init(
       depth,
       recursion_set);
   }
+}
+
+symbolt &
+symbol_factoryt::new_tmp_symbol(const typet &type, const std::string &prefix)
+{
+  auto &symbol = get_fresh_aux_symbol(
+    type,
+    id2string(object_factory_params.function_id),
+    prefix,
+    loc,
+    ID_C,
+    symbol_table);
+  symbols_created.push_back(&symbol);
+  return symbol;
 }
 
 /// Creates a symbol and generates code so that it can vary over all possible
