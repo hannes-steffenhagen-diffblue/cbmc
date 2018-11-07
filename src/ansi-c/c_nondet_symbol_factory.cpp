@@ -34,6 +34,7 @@ class symbol_factoryt
   const source_locationt &loc;
   namespacet ns;
   const c_object_factory_parameterst &object_factory_params;
+  std::map<irep_idt, irep_idt> &deferred_array_sizes;
 
   typedef std::set<irep_idt> recursion_sett;
 
@@ -42,12 +43,14 @@ public:
     std::vector<const symbolt *> &_symbols_created,
     symbol_tablet &_symbol_table,
     const source_locationt &loc,
-    const c_object_factory_parameterst &object_factory_params)
+    const c_object_factory_parameterst &object_factory_params,
+    std::map<irep_idt, irep_idt> &deferred_array_sizes)
     : symbols_created(_symbols_created),
       symbol_table(_symbol_table),
       loc(loc),
       ns(_symbol_table),
-      object_factory_params(object_factory_params)
+      object_factory_params(object_factory_params),
+      deferred_array_sizes(deferred_array_sizes)
   {}
 
   exprt allocate_object(
@@ -78,11 +81,7 @@ private:
 
   void defer_size_initialization(irep_idt associated_size_name, irep_idt array_size_name);
   optionalt<dstringt> get_deferred_size(irep_idt symbol_name) const;
-
-  static std::map<irep_idt, irep_idt> deferred_size_initializations;
 };
-
-std::map<irep_idt, irep_idt> symbol_factoryt::deferred_size_initializations;
 
 /// Create a symbol for a pointer to point to
 /// \param assignments: The code block to add code to
@@ -410,13 +409,14 @@ symbol_factoryt::new_tmp_symbol(const typet &type, const std::string &prefix)
 }
 
 void symbol_factoryt::defer_size_initialization(irep_idt associated_size_name, irep_idt array_size_name) {
-  auto succeeded = deferred_size_initializations.insert({associated_size_name, array_size_name});
+  auto succeeded =
+    deferred_array_sizes.insert({associated_size_name, array_size_name});
   INVARIANT(succeeded.second,
     "each size parameter should have a unique associated array");
 }
 
 optionalt<dstringt> symbol_factoryt::get_deferred_size(irep_idt symbol_name) const {
-  return optional_lookup(deferred_size_initializations, symbol_name);
+  return optional_lookup(deferred_array_sizes, symbol_name);
 }
 
 /// Creates a symbol and generates code so that it can vary over all possible
@@ -434,7 +434,8 @@ exprt c_nondet_symbol_factory(
   const irep_idt base_name,
   const typet &type,
   const source_locationt &loc,
-  const c_object_factory_parameterst &object_factory_parameters)
+  const c_object_factory_parameterst &object_factory_parameters,
+  std::map<irep_idt, irep_idt> &deferred_array_sizes)
 {
   irep_idt identifier=id2string(goto_functionst::entry_point())+
     "::"+id2string(base_name);
@@ -457,7 +458,11 @@ exprt c_nondet_symbol_factory(
   symbols_created.push_back(main_symbol_ptr);
 
   symbol_factoryt state(
-    symbols_created, symbol_table, loc, object_factory_parameters);
+    symbols_created,
+    symbol_table,
+    loc,
+    object_factory_parameters,
+    deferred_array_sizes);
   code_blockt assignments;
   state.gen_nondet_init(assignments, main_symbol_expr);
 
