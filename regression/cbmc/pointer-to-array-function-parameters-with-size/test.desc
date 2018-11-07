@@ -1,0 +1,9 @@
+CORE
+test.c
+--function test --pointers-to-treat-as-array __CPROVER__start::arr --pointer-check --unwind 10
+\[test.pointer_dereference.1\] dereference failure: pointer NULL in arr\[\(signed long int\)i\]: SUCCESS
+\[test.pointer_dereference.2\] dereference failure: pointer invalid in arr\[\(signed long int\)i\]: SUCCESS
+\[test.pointer_dereference.3\] dereference failure: deallocated dynamic object in arr\[\(signed long int\)i\]: SUCCESS
+\[test.pointer_dereference.4\] dereference failure: dead object in arr\[\(signed long int\)i\]: SUCCESS
+\[test.pointer_dereference.5\] dereference failure: pointer outside dynamic object bounds in arr\[\(signed long int\)i\]: SUCCESS
+\[test.pointer_dereference.6\] dereference failure: pointer outside object bounds in arr\[\(signed long int\)i\]: SUCCESS
