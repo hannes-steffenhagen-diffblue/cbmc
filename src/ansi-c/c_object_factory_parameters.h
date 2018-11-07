@@ -14,6 +14,9 @@ Author: Daniel Poetzl
 #include <util/object_factory_parameters.h>
 #include <util/options.h>
 #include <vector>
+#include <map>
+#include <set>
+#include <util/optional.h>
 
 struct c_object_factory_parameterst final : public object_factory_parameterst
 {
@@ -25,11 +28,18 @@ struct c_object_factory_parameterst final : public object_factory_parameterst
   }
 
   bool should_be_treated_as_array(irep_idt id) const;
-
+  bool is_array_size_parameter(irep_idt id) const;
+  optionalt<irep_idt> get_associated_size_variable(irep_idt array_id) const;
+  optionalt<irep_idt> get_associated_array_variable(irep_idt size_id) const;
   void set(const optionst &options) override;
 
 private:
   std::vector<irep_idt> pointers_to_treat_as_array;
+  std::set<irep_idt> variables_that_hold_array_sizes = {"__CPROVER__start::sz"};
+  std::map<irep_idt, irep_idt> array_name_to_associated_array_size_variable
+    = {{"__CPROVER__start::arr", "__CPROVER__start::sz"}};
+  std::map<irep_idt, irep_idt> size_name_to_associated_array_name
+    = {{"__CPROVER__start::sz", "__CPROVER__start::arr"}};
 };
 
 /// Parse the c object factory parameters from a given command line

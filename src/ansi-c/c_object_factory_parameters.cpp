@@ -9,6 +9,7 @@ Author: Daniel Poetzl
 #include "c_object_factory_parameters.h"
 
 #include <util/cmdline.h>
+#include <util/optional_utilities.h>
 
 void parse_c_object_factory_options(const cmdlinet &cmdline, optionst &options)
 {
@@ -40,3 +41,17 @@ void c_object_factory_parameterst::set(const optionst &options)
     back_inserter(this->pointers_to_treat_as_array),
     id2string);
 }
+
+bool c_object_factory_parameterst::is_array_size_parameter(irep_idt id) const {
+  return variables_that_hold_array_sizes.find(id) != end(variables_that_hold_array_sizes);
+}
+
+optionalt<irep_idt> c_object_factory_parameterst::get_associated_size_variable(irep_idt array_id) const {
+  return optional_lookup(array_name_to_associated_array_size_variable, array_id);
+}
+
+optionalt<irep_idt> c_object_factory_parameterst::get_associated_array_variable(irep_idt size_id) const {
+  return optional_lookup(size_name_to_associated_array_name, size_id);
+}
+
+

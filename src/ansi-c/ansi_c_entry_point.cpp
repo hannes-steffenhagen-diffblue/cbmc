@@ -27,7 +27,6 @@ exprt::operandst build_function_environment(
 {
   exprt::operandst main_arguments;
   main_arguments.resize(parameters.size());
-
   for(std::size_t param_number=0;
       param_number<parameters.size();
       param_number++)

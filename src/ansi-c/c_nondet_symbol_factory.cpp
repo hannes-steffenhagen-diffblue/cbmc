@@ -24,6 +24,8 @@ Author: Diffblue Ltd.
 #include <util/string_constant.h>
 
 #include <goto-programs/goto_functions.h>
+#include <util/array_name.h>
+#include <util/optional_utilities.h>
 
 class symbol_factoryt
 {
@@ -67,7 +69,20 @@ private:
     const exprt &expr,
     std::size_t depth,
     const recursion_sett &recursion_set);
+
+  void gen_nondet_size_array_init(
+    code_blockt &assignments,
+    const symbol_exprt &array,
+    const size_t depth,
+    const recursion_sett &recursion_set);
+
+  void defer_size_initialization(irep_idt associated_size_name, irep_idt array_size_name);
+  optionalt<dstringt> get_deferred_size(irep_idt symbol_name) const;
+
+  static std::map<irep_idt, irep_idt> deferred_size_initializations;
 };
+
+std::map<irep_idt, irep_idt> symbol_factoryt::deferred_size_initializations;
 
 /// Create a symbol for a pointer to point to
 /// \param assignments: The code block to add code to
@@ -131,91 +146,16 @@ void symbol_factoryt::gen_nondet_init(
   {
     if(expr.id() == ID_symbol)
     {
-      // Create code like this:
-      // size_t cond;
-      // size_t actual_size;
-      // T* array;
-      // if(cond < 1) {
-      //   actual_size = 1;
-      //   array = calloc(actual_size, sizeof(T));
-      //   for(size_t i = 0; i < actual_size; ++i) {
-      //      array[i] = nondet();
-      //   }
-      // } else if(cond < 2) {
-      //   ....
-      // }
-      // ...
-      // else {
-      //   actual_size = max_array_size;
-      //   ...
-      // }
-      auto const max_array_size = std::size_t{10};
       auto const &symbol_expr = to_symbol_expr(expr);
-      const auto &array_name = symbol_expr.get_identifier();
-      if(object_factory_params.should_be_treated_as_array(array_name))
+      const auto &symbol_name = symbol_expr.get_identifier();
+      if(object_factory_params.should_be_treated_as_array(symbol_name))
       {
-        auto const &size_cond_symbol = new_tmp_symbol(size_type(), "size_cond");
-        auto const &size_symbol = new_tmp_symbol(size_type(), "size");
-
-        auto const &element_type = symbol_expr.type().subtype();
-        code_ifthenelset initialization_if_then_else;
-        auto *current_if_then_else = &initialization_if_then_else;
-
-        for(std::size_t i = 1; i < max_array_size; ++i)
-        {
-          auto const &array_size = from_integer(i, size_type());
-          auto array_type = array_typet{element_type, array_size};
-
-          auto &static_array = new_tmp_symbol(
-            array_type, id2string(array_name) + "_" + std::to_string(i));
-          static_array.is_static_lifetime = true;
-
-          const constant_exprt &size_expr = array_size;
-
-          current_if_then_else->cond() = binary_exprt(
-            size_cond_symbol.symbol_expr(), ID_lt, size_expr, bool_typet{});
-          code_blockt then_case;
-          then_case.add(code_assignt(size_symbol.symbol_expr(), size_expr));
-          gen_nondet_array_init(
-            then_case, static_array.symbol_expr(), depth, recursion_set);
-          then_case.add(code_assignt{
-            expr,
-            address_of_exprt{index_exprt{static_array.symbol_expr(),
-                                         from_integer(0, size_type()),
-                                         array_type.subtype()},
-                             pointer_type(array_type.subtype())}});
-          current_if_then_else->then_case() = then_case;
-          if(i + 1 < max_array_size)
-          {
-            current_if_then_else->else_case() = code_ifthenelset{};
-            current_if_then_else = reinterpret_cast<code_ifthenelset *>(
-              &current_if_then_else->else_case());
-          }
-          else
-          {
-            // generate an else case instead of another if on the final case
-            auto const &array_size = from_integer(i + 1, size_type());
-            auto array_type = array_typet{element_type, array_size};
-
-            auto &static_array = new_tmp_symbol(
-              array_type, id2string(array_name) + "_" + std::to_string(i + 1));
-            static_array.is_static_lifetime = true;
-
-            const constant_exprt &size_expr = array_size;
-            code_blockt else_case;
-            else_case.add(code_assignt(size_symbol.symbol_expr(), size_expr));
-            gen_nondet_array_init(
-              else_case, static_array.symbol_expr(), depth, recursion_set);
-            else_case.add(code_assignt{
-              expr,
-              address_of_exprt{index_exprt{static_array.symbol_expr(),
-                                           from_integer(0, size_type()),
-                                           array_type.subtype()},
-                               pointer_type(array_type.subtype())}});
-            current_if_then_else->else_case() = else_case;
-          }
-        }
-        assignments.add(initialization_if_then_else);
+        gen_nondet_size_array_init(
+          assignments, symbol_expr, depth, recursion_set);
+        return;
+      } else if(object_factory_params.is_array_size_parameter(symbol_name))
+      {
+        // skip, we'll handle this during array initialisation
         return;
       }
     }
@@ -314,8 +254,125 @@ void symbol_factoryt::gen_nondet_init(
                                        : side_effect_expr_nondett(type, loc);
     code_assignt assign(expr, rhs);
     assign.add_source_location()=loc;
-
+    if(expr.id() == ID_symbol) {
+      auto const &symbol_expr = to_symbol_expr(expr);
+      auto const associated_array_size = get_deferred_size(symbol_expr.get_identifier());
+      if(associated_array_size.has_value()) {
+        assign.rhs() = typecast_exprt{
+          symbol_table.lookup_ref(associated_array_size.value()).symbol_expr(),
+          symbol_expr.type()
+        };
+      }
+    }
     assignments.move(assign);
+  }
+}
+
+void symbol_factoryt::gen_nondet_size_array_init(
+  code_blockt &assignments,
+  const symbol_exprt &array,
+  const size_t depth,
+  const symbol_factoryt::recursion_sett &recursion_set)
+{
+  // This works on dynamic arrays, so the thing we assign to is a pointer
+  // rather than an array with a fixed size
+  PRECONDITION(array.type().id() == ID_pointer);
+  // Create code like this:
+  // size_t cond;
+  // size_t actual_size;
+  // T* array;
+  // if(cond < 1) {
+  //   actual_size = 1;
+  //   array = calloc(actual_size, sizeof(T));
+  //   for(size_t i = 0; i < actual_size; ++i) {
+  //      array[i] = nondet();
+  //   }
+  // } else if(cond < 2) {
+  //   ....
+  // }
+  // ...
+  // else {
+  //   actual_size = max_array_size;
+  //   ...
+  // }
+  auto const max_array_size = std::size_t{10};
+  auto const &array_name = array.get_identifier();
+  auto const &size_cond_symbol = new_tmp_symbol(size_type(), "size_cond");
+  auto const &size_symbol = new_tmp_symbol(size_type(), "size");
+
+  auto const &element_type = array.type().subtype();
+  code_ifthenelset initialization_if_then_else;
+  auto *current_if_then_else = &initialization_if_then_else;
+
+  for(std::size_t i = 1; i < max_array_size; ++i)
+  {
+    auto const &array_size = from_integer(i, size_type());
+    auto array_type = array_typet{element_type, array_size};
+
+    auto &static_array = new_tmp_symbol(
+      array_type, id2string(array_name) + "_" + std::__cxx11::to_string(i));
+    static_array.is_static_lifetime = true;
+
+    const constant_exprt &size_expr = array_size;
+
+    current_if_then_else->cond() = binary_exprt(
+      size_cond_symbol.symbol_expr(), ID_lt, size_expr, bool_typet{});
+    code_blockt then_case;
+    then_case.add(code_assignt(size_symbol.symbol_expr(), size_expr));
+    gen_nondet_array_init(
+      then_case, static_array.symbol_expr(), depth, recursion_set);
+    then_case.add(
+      code_assignt{array,
+                   address_of_exprt{index_exprt{static_array.symbol_expr(),
+                                                from_integer(0, size_type()),
+                                                array_type.subtype()},
+                                    pointer_type(array_type.subtype())}});
+    current_if_then_else->then_case() = then_case;
+    if(i + 1 < max_array_size)
+    {
+      current_if_then_else->else_case() = code_ifthenelset{};
+      current_if_then_else = reinterpret_cast<code_ifthenelset *>(
+        &current_if_then_else->else_case());
+    }
+    else
+    {
+      // generate an else case instead of another if on the final case
+      auto const &array_size = from_integer(i + 1, size_type());
+      auto array_type = array_typet{element_type, array_size};
+
+      auto &static_array = new_tmp_symbol(
+        array_type,
+        id2string(array_name) + "_" + std::__cxx11::to_string(i + 1));
+      static_array.is_static_lifetime = true;
+
+      const constant_exprt &size_expr = array_size;
+      code_blockt else_case;
+      else_case.add(code_assignt(size_symbol.symbol_expr(), size_expr));
+      gen_nondet_array_init(
+        else_case, static_array.symbol_expr(), depth, recursion_set);
+      else_case.add(
+        code_assignt{array,
+                     address_of_exprt{index_exprt{static_array.symbol_expr(),
+                                                  from_integer(0, size_type()),
+                                                  array_type.subtype()},
+                                      pointer_type(array_type.subtype())}});
+      current_if_then_else->else_case() = else_case;
+    }
+  }
+  assignments.add(initialization_if_then_else);
+  auto const associated_size = object_factory_params.get_associated_size_variable(array_name);
+  if(associated_size.has_value()) {
+    auto const associated_size_symbol = symbol_table.lookup(associated_size.value());
+    if(associated_size_symbol != nullptr) {
+      assignments.add(code_assignt{
+        associated_size_symbol->symbol_expr(),
+        typecast_exprt{size_symbol.symbol_expr(), associated_size_symbol->type}
+      });
+    } else {
+      // we've not seen the associated size symbol yet, so we have
+      // to defer setting it to when we do get there...
+      defer_size_initialization(associated_size.value(), size_symbol.name);
+    }
   }
 }
 
@@ -350,6 +407,16 @@ symbol_factoryt::new_tmp_symbol(const typet &type, const std::string &prefix)
     symbol_table);
   symbols_created.push_back(&symbol);
   return symbol;
+}
+
+void symbol_factoryt::defer_size_initialization(irep_idt associated_size_name, irep_idt array_size_name) {
+  auto succeeded = deferred_size_initializations.insert({associated_size_name, array_size_name});
+  INVARIANT(succeeded.second,
+    "each size parameter should have a unique associated array");
+}
+
+optionalt<dstringt> symbol_factoryt::get_deferred_size(irep_idt symbol_name) const {
+  return optional_lookup(deferred_size_initializations, symbol_name);
 }
 
 /// Creates a symbol and generates code so that it can vary over all possible
