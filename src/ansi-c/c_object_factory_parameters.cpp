@@ -60,8 +60,4 @@ optionalt<irep_idt> c_object_factory_parameterst::get_associated_size_variable(i
   return optional_lookup(array_name_to_associated_array_size_variable, array_id);
 }
 
-optionalt<irep_idt> c_object_factory_parameterst::get_associated_array_variable(irep_idt size_id) const {
-  return optional_lookup(size_name_to_associated_array_name, size_id);
-}
-
 
