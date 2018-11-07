@@ -1,6 +1,6 @@
 CORE
 test.c
---function test --pointers-to-treat-as-array __CPROVER__start::arr --max-dynamic-array-size 20 --pointer-check --unwind 20
+--function test --pointers-to-treat-as-array arr --max-dynamic-array-size 20 --pointer-check --unwind 20
 \[test.assertion.1\] assertion sz <= 10: FAILURE
 \[test.pointer_dereference.1\] dereference failure: pointer NULL in arr\[\(signed long int\)i\]: SUCCESS
 \[test.pointer_dereference.2\] dereference failure: pointer invalid in arr\[\(signed long int\)i\]: SUCCESS

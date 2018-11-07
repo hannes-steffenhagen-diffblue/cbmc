@@ -81,6 +81,8 @@ private:
 
   void defer_size_initialization(irep_idt associated_size_name, irep_idt array_size_name);
   optionalt<dstringt> get_deferred_size(irep_idt symbol_name) const;
+
+  const irep_idt &get_symbol_base_name(const symbol_exprt &symbol_expr) const;
 };
 
 /// Create a symbol for a pointer to point to
@@ -146,7 +148,7 @@ void symbol_factoryt::gen_nondet_init(
     if(expr.id() == ID_symbol)
     {
       auto const &symbol_expr = to_symbol_expr(expr);
-      const auto &symbol_name = symbol_expr.get_identifier();
+      const auto &symbol_name = get_symbol_base_name(symbol_expr);
       if(object_factory_params.should_be_treated_as_array(symbol_name))
       {
         gen_nondet_size_array_init(
@@ -255,7 +257,8 @@ void symbol_factoryt::gen_nondet_init(
     assign.add_source_location()=loc;
     if(expr.id() == ID_symbol) {
       auto const &symbol_expr = to_symbol_expr(expr);
-      auto const associated_array_size = get_deferred_size(symbol_expr.get_identifier());
+      auto const associated_array_size =
+        get_deferred_size(get_symbol_base_name(symbol_expr));
       if(associated_array_size.has_value()) {
         assign.rhs() = typecast_exprt{
           symbol_table.lookup_ref(associated_array_size.value()).symbol_expr(),
@@ -265,6 +268,12 @@ void symbol_factoryt::gen_nondet_init(
     }
     assignments.move(assign);
   }
+}
+
+const irep_idt &
+symbol_factoryt::get_symbol_base_name(const symbol_exprt &symbol_expr) const
+{
+  return symbol_table.lookup_ref(symbol_expr.get_identifier()).base_name;
 }
 
 void symbol_factoryt::gen_nondet_size_array_init(
@@ -296,7 +305,7 @@ void symbol_factoryt::gen_nondet_size_array_init(
   // }
   auto const max_array_size =
     std::size_t{object_factory_params.max_dynamic_array_size};
-  auto const &array_name = array.get_identifier();
+  auto const &array_name = get_symbol_base_name(array);
   auto const &size_cond_symbol = new_tmp_symbol(size_type(), "size_cond");
   auto const &size_symbol = new_tmp_symbol(size_type(), "size");
 
@@ -371,7 +380,7 @@ void symbol_factoryt::gen_nondet_size_array_init(
     } else {
       // we've not seen the associated size symbol yet, so we have
       // to defer setting it to when we do get there...
-      defer_size_initialization(associated_size.value(), size_symbol.name);
+      defer_size_initialization(associated_size.value(), size_symbol.base_name);
     }
   }
 }
