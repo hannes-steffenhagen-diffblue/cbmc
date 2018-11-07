@@ -9,7 +9,9 @@ Author: Daniel Poetzl
 #include "c_object_factory_parameters.h"
 
 #include <util/cmdline.h>
+#include <util/exception_utils.h>
 #include <util/optional_utilities.h>
+#include <util/string_utils.h>
 
 void parse_c_object_factory_options(const cmdlinet &cmdline, optionst &options)
 {
@@ -19,6 +21,12 @@ void parse_c_object_factory_options(const cmdlinet &cmdline, optionst &options)
     options.set_option(
       "pointers-to-treat-as-array",
       cmdline.get_comma_separated_values("pointers-to-treat-as-array"));
+  }
+  if(cmdline.isset("associated-array-sizes"))
+  {
+    options.set_option(
+      "associated-array-sizes",
+      cmdline.get_comma_separated_values("associated-array-sizes"));
   }
   if(cmdline.isset("max-dynamic-array-size"))
   {
@@ -49,6 +57,38 @@ void c_object_factory_parameterst::set(const optionst &options)
   {
     max_dynamic_array_size =
       options.get_unsigned_int_option("max-dynamic-array-size");
+  }
+  if(options.is_set("associated-array-sizes"))
+  {
+    array_name_to_associated_array_size_variable.clear();
+    variables_that_hold_array_sizes.clear();
+    auto const &array_size_pairs =
+      options.get_list_option("associated-array-sizes");
+    for(auto const &array_size_pair : array_size_pairs)
+    {
+      std::string array_name;
+      std::string size_name;
+      split_string(array_size_pair, ':', array_name, size_name);
+      auto const mapping_insert_result =
+        array_name_to_associated_array_size_variable.insert(
+          {irep_idt{array_name}, irep_idt{size_name}});
+      if(!mapping_insert_result.second)
+      {
+        throw invalid_command_line_argument_exceptiont{
+          "duplicate associated size entries for array `" + array_name +
+            "', existing: `" + id2string(mapping_insert_result.first->second) +
+            "', tried to insert: `" + size_name + "'",
+          "--associated-array-sizes"};
+      }
+      auto const size_name_insert_result =
+        variables_that_hold_array_sizes.insert(irep_idt{size_name});
+      if(!size_name_insert_result.second)
+      {
+        throw invalid_command_line_argument_exceptiont{
+          "using size parameter `" + size_name + "' more than once",
+          "--associated-array-sizes"};
+      }
+    }
   }
 }
 

@@ -37,9 +37,8 @@ struct c_object_factory_parameterst final : public object_factory_parameterst
 
 private:
   std::vector<irep_idt> pointers_to_treat_as_array;
-  std::set<irep_idt> variables_that_hold_array_sizes = {"sz"};
-  std::map<irep_idt, irep_idt> array_name_to_associated_array_size_variable = {
-    {"arr", "sz"}};
+  std::set<irep_idt> variables_that_hold_array_sizes;
+  std::map<irep_idt, irep_idt> array_name_to_associated_array_size_variable;
 };
 
 /// Parse the c object factory parameters from a given command line
