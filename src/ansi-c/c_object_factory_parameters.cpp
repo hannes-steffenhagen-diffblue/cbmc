@@ -20,6 +20,11 @@ void parse_c_object_factory_options(const cmdlinet &cmdline, optionst &options)
       "pointers-to-treat-as-array",
       cmdline.get_comma_separated_values("pointers-to-treat-as-array"));
   }
+  if(cmdline.isset("max-dynamic-array-size"))
+  {
+    options.set_option(
+      "max-dynamic-array-size", cmdline.get_value("max-dynamic-array-size"));
+  }
 }
 
 bool c_object_factory_parameterst::should_be_treated_as_array(irep_idt id) const
@@ -40,6 +45,11 @@ void c_object_factory_parameterst::set(const optionst &options)
     end(pointers_to_treat_as_array),
     back_inserter(this->pointers_to_treat_as_array),
     id2string);
+  if(options.is_set("max-dynamic-array-size"))
+  {
+    max_dynamic_array_size =
+      options.get_unsigned_int_option("max-dynamic-array-size");
+  }
 }
 
 bool c_object_factory_parameterst::is_array_size_parameter(irep_idt id) const {

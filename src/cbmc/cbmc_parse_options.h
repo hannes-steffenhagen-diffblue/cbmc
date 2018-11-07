@@ -77,6 +77,7 @@ class optionst;
   "(max-nondet-tree-depth):" \
   "(min-null-tree-depth):" \
   "(pointers-to-treat-as-array):" \
+  "(max-dynamic-array-size):" \
   "(claim):(show-claims)(floatbv)(all-claims)(all-properties)" // legacy, and will eventually disappear // NOLINT(whitespace/line_length)
 // clang-format on
 

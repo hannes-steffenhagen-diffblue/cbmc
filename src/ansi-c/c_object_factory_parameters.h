@@ -33,6 +33,8 @@ struct c_object_factory_parameterst final : public object_factory_parameterst
   optionalt<irep_idt> get_associated_array_variable(irep_idt size_id) const;
   void set(const optionst &options) override;
 
+  std::size_t max_dynamic_array_size = 10;
+
 private:
   std::vector<irep_idt> pointers_to_treat_as_array;
   std::set<irep_idt> variables_that_hold_array_sizes = {"__CPROVER__start::sz"};

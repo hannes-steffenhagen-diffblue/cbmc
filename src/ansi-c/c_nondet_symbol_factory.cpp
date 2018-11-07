@@ -294,7 +294,8 @@ void symbol_factoryt::gen_nondet_size_array_init(
   //   actual_size = max_array_size;
   //   ...
   // }
-  auto const max_array_size = std::size_t{10};
+  auto const max_array_size =
+    std::size_t{object_factory_params.max_dynamic_array_size};
   auto const &array_name = array.get_identifier();
   auto const &size_cond_symbol = new_tmp_symbol(size_type(), "size_cond");
   auto const &size_symbol = new_tmp_symbol(size_type(), "size");

@@ -929,6 +929,7 @@ void cbmc_parse_optionst::help()
     " --pointers-to-treat-as-array <identifier,...>  Comma separated list of identifiers that should be initialized" \
     "                               as arrays" \
     "                              NULL in a recursively nondet initialized struct\n" /* NOLINT(*) */ \
+    " --max-dynamic-array-size <size>  max size for dynamically allocated arrays\n"
     HELP_FUNCTIONS
     "\n"
     "Program representations:\n"
