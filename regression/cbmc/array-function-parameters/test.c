@@ -12,5 +12,5 @@ struct Test { Node_T* lists[4]; };
 
 void test(struct Test Test)
 {
-  assert(Test.lists[1]->next != NULL);
+  assert(Test.lists[1]->next);
 }
