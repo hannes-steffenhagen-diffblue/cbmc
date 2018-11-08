@@ -1,3 +1,11 @@
+/*******************************************************************\
+
+ Module: functions that are useful with optionalt
+
+ Author: Diffblue Ltd.
+
+\*******************************************************************/
+
 #include "optional.h"
 
 #include <map>
