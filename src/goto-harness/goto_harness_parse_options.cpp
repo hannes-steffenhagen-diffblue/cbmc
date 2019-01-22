@@ -9,22 +9,47 @@ Author: Diffblue Ltd.
 #include <cstddef>
 #include <iostream>
 #include <string>
+#include <set>
 
+#include <util/invariant.h>
 #include <util/exit_codes.h>
 #include <util/version.h>
+#include <util/exception_utils.h>
 
 #include "goto_harness_parse_options.h"
+#include "goto_harness_generator_factory.h"
 
 int goto_harness_parse_optionst::doit()
 {
+  for(auto const& arg : cmdline.args) {
+    std::cout << "Arg: " << arg << '\n';
+  }
   if(cmdline.isset("version"))
   {
     std::cout << CBMC_VERSION << '\n';
     return CPROVER_EXIT_SUCCESS;
   }
 
-  help();
-  return CPROVER_EXIT_USAGE_ERROR;
+  if(!cmdline.isset(GOTO_HARNESS_GENERATOR_TYPE_OPT)) {
+    throw invalid_command_line_argument_exceptiont{
+      "required option not set",
+      "--" GOTO_HARNESS_GENERATOR_TYPE_OPT
+        };
+  }
+  auto harness_generator = goto_harness_generator_factory(cmdline.get_value(GOTO_HARNESS_GENERATOR_TYPE_OPT));
+  CHECK_RETURN(harness_generator != nullptr);
+  auto const common_options = std::set<irep_idt> {
+    irep_idt{"version"},
+    irep_idt{GOTO_HARNESS_GENERATOR_TYPE_OPT}
+  };
+  for(auto const &option : cmdline.option_names()) {
+    auto const option_name_as_id = irep_idt{option};
+    if(common_options.find(option_name_as_id) == common_options.end()) {
+      harness_generator->handle_option(option_name_as_id, cmdline);
+    }
+  }
+  harness_generator->generate();
+  return CPROVER_EXIT_SUCCESS;
 }
 
 void goto_harness_parse_optionst::help()
