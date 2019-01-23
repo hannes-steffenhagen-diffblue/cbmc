@@ -31,6 +31,7 @@ int goto_harness_parse_optionst::doit()
   }
 
   if(!cmdline.isset(GOTO_HARNESS_GENERATOR_TYPE_OPT)) {
+    help();
     throw invalid_command_line_argument_exceptiont{
       "required option not set",
       "--" GOTO_HARNESS_GENERATOR_TYPE_OPT
@@ -74,7 +75,8 @@ void goto_harness_parse_optionst::help()
             << "Usage:                       Purpose:\n"
             << '\n'
             << " goto-harness [-?] [-h] [--help]  show help\n"
-            << " goto-harness --version           show version\n";
+            << " goto-harness --version           show version\n"
+            << DEFAULT_GOTO_HARNESS_GENERATOR_HELP;
 }
 
 goto_harness_parse_optionst::goto_harness_parse_optionst(
