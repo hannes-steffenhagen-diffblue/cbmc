@@ -6,8 +6,8 @@ Author: Diffblue Ltd.
 
 \******************************************************************/
 
-#ifndef CRPOVER_GOTO_HARNESS_GOTO_HARNESS_PARSE_OPTIONS_H
-#define CRPOVER_GOTO_HARNESS_GOTO_HARNESS_PARSE_OPTIONS_H
+#ifndef CPROVER_GOTO_HARNESS_GOTO_HARNESS_PARSE_OPTIONS_H
+#define CPROVER_GOTO_HARNESS_GOTO_HARNESS_PARSE_OPTIONS_H
 
 #include <util/parse_options.h>
 
@@ -22,4 +22,4 @@ public:
   goto_harness_parse_optionst(int argc, const char *argv[]);
 };
 
-#endif // CRPOVER_GOTO_HARNESS_GOTO_HARNESS_PARSE_OPTIONS_H
+#endif // CPROVER_GOTO_HARNESS_GOTO_HARNESS_PARSE_OPTIONS_H
