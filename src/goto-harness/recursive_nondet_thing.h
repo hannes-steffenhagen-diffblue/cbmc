@@ -7,8 +7,8 @@
 
 struct nondet_thing_optionst
 {
-  std::size_t min_null_tree_depth = 1;
-  std::size_t max_nondet_tree_depth = 2;
+  std::size_t min_null_tree_depth = 2;
+  std::size_t max_nondet_tree_depth = 3;
 };
 
 class recursive_nondet_thing
@@ -35,4 +35,8 @@ private:
   irep_idt make_nondet_constructor_for_type(const typet &);
   symbolt &register_constructor_for_type(const typet &);
   void finalize_constructor(const symbolt &constructor_symbol);
+
+  irep_idt make_pointer_constructor(const pointer_typet &type);
+  symbol_exprt get_depth_param_from_constructor(const symbolt &constructor);
+  symbol_exprt get_malloc_function();
 };
