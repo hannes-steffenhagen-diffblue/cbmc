@@ -11,6 +11,7 @@ Author: Diffblue Ltd.
 #include <goto-programs/goto_convert.h>
 #include <goto-programs/goto_model.h>
 #include <util/allocate_objects.h>
+#include <util/arith_tools.h>
 #include <util/exception_utils.h>
 #include <util/std_code.h>
 #include <util/std_expr.h>
@@ -18,6 +19,7 @@ Author: Diffblue Ltd.
 
 #include "function_harness_generator_options.h"
 #include "goto_harness_parse_options.h"
+#include "recursive_nondet_thing.h"
 
 struct function_call_harness_generatort::implt
 {
@@ -27,6 +29,7 @@ struct function_call_harness_generatort::implt
   symbol_tablet *symbol_table;
   goto_functionst *goto_functions;
   bool nondet_globals = false;
+  std::unique_ptr<recursive_nondet_thing> thing;
 
   void generate(goto_modelt &goto_model, const irep_idt &harness_function_name);
   void generate_nondet_globals(code_blockt &function_body);
@@ -104,6 +107,7 @@ void function_call_harness_generatort::implt::generate(
 {
   symbol_table = &goto_model.symbol_table;
   goto_functions = &goto_model.goto_functions;
+  thing = util_make_unique<recursive_nondet_thing>(nondet_thing_optionst{}, *symbol_table);
   this->harness_function_name = harness_function_name;
   ensure_harness_does_not_already_exist();
 
@@ -137,7 +141,8 @@ void function_call_harness_generatort::implt::generate_initialisation_code_for(
   code_blockt &block,
   const exprt &lhs)
 {
-  block.add(code_assignt{lhs, side_effect_expr_nondett(lhs.type())});
+  block.add(code_assignt{lhs, thing->get_initialiser(lhs.type(), 
+    from_integer(0, unsignedbv_typet{32}))});
 }
 
 void function_call_harness_generatort::validate_options()
@@ -184,9 +189,8 @@ void function_call_harness_generatort::implt::add_harness_function_to_goto_model
 
   harness_function_symbol.is_lvalue = true;
   harness_function_symbol.mode = function_to_call.mode;
-  harness_function_symbol.type =
-    code_typet{{}, empty_typet{}};
-  harness_function_symbol.value =std::move(function_body);
+  harness_function_symbol.type = code_typet{{}, empty_typet{}};
+  harness_function_symbol.value = std::move(function_body);
 
   symbol_table->insert(harness_function_symbol);
 
