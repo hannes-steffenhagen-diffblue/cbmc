@@ -107,7 +107,8 @@ void function_call_harness_generatort::implt::generate(
 {
   symbol_table = &goto_model.symbol_table;
   goto_functions = &goto_model.goto_functions;
-  thing = util_make_unique<recursive_nondet_thing>(nondet_thing_optionst{}, *symbol_table);
+  thing = util_make_unique<recursive_nondet_thing>(
+    nondet_thing_optionst{}, goto_model, *message_handler);
   this->harness_function_name = harness_function_name;
   ensure_harness_does_not_already_exist();
 
@@ -206,5 +207,5 @@ void function_call_harness_generatort::implt::add_harness_function_to_goto_model
     body,
     *message_handler,
     ID_C);
-  body.add_instruction(goto_program_instruction_typet::END_FUNCTION);
+  body.add(goto_programt::make_end_function());
 }
