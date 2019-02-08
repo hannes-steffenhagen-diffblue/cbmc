@@ -91,10 +91,13 @@ void function_call_harness_generatort::implt::setup_parameters_and_call_entry_fu
   {
     auto argument = allocate_objects.allocate_automatic_local_object(
       parameter.type(), parameter.get_base_name());
-    generate_initialisation_code_for(function_body, argument);
     arguments.push_back(argument);
   }
-
+  allocate_objects.declare_created_symbols(function_body);
+  for(auto const &argument : arguments)
+  {
+    generate_initialisation_code_for(function_body, argument);
+  }
   code_function_callt function_call{function_to_call.symbol_expr(), std::move(arguments)};
   function_call.add_source_location() = function_to_call.location;
 
