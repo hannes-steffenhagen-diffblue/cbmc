@@ -150,10 +150,11 @@ recursive_nondet_thing::make_pointer_constructor(const pointer_typet &type)
   constructor_body.add(code_assignt{nondet_choose_to_recurse,
                                     side_effect_expr_nondett{bool_typet{}}});
   auto allocate_and_initialize_object = code_blockt{};
-  allocate_and_initialize_object.add(
-    code_assignt{pointer_val,
-                 side_effect_expr_function_callt{
-                   malloc_function, {size_of_expr(type.subtype(), ns)}}});
+  allocate_and_initialize_object.add(code_assignt{
+    pointer_val,
+    typecast_exprt{side_effect_expr_function_callt{
+                     malloc_function, {size_of_expr(type.subtype(), ns)}},
+                   type}});
   allocate_and_initialize_object.add(code_assignt{
     dereference_exprt{pointer_val, type.subtype()},
     get_initialiser(

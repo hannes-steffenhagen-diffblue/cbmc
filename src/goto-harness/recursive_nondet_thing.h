@@ -7,8 +7,8 @@
 
 struct nondet_thing_optionst
 {
-  std::size_t min_null_tree_depth = 2;
-  std::size_t max_nondet_tree_depth = 3;
+  std::size_t min_null_tree_depth = 1;
+  std::size_t max_nondet_tree_depth = 2;
 };
 
 class recursive_nondet_thing

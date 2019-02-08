@@ -29,6 +29,8 @@ struct function_call_harness_generatort::implt
   symbol_tablet *symbol_table;
   goto_functionst *goto_functions;
   bool nondet_globals = false;
+
+  nondet_thing_optionst thing_options;
   std::unique_ptr<recursive_nondet_thing> thing;
 
   void generate(goto_modelt &goto_model, const irep_idt &harness_function_name);
@@ -60,6 +62,16 @@ void function_call_harness_generatort::handle_option(
   else if (option == FUNCTION_HARNESS_GENERATOR_NONDET_GLOBALS_OPT)
   {
     p_impl->nondet_globals = true;
+  }
+  else if(option == FUNCTION_HARNESS_GENERATOR_MIN_NULL_TREE_DEPTH_OPT)
+  {
+    auto const value = require_exactly_one_value(option, values);
+    p_impl->thing_options.min_null_tree_depth = std::stoul(value);
+  }
+  else if(option == FUNCTION_HARNESS_GENERATOR_MAX_NONDET_TREE_DEPTH_OPT)
+  {
+    auto const value = require_exactly_one_value(option, values);
+    p_impl->thing_options.max_nondet_tree_depth = std::stoul(value);
   }
   else
   {
@@ -111,7 +123,7 @@ void function_call_harness_generatort::implt::generate(
   symbol_table = &goto_model.symbol_table;
   goto_functions = &goto_model.goto_functions;
   thing = util_make_unique<recursive_nondet_thing>(
-    nondet_thing_optionst{}, goto_model, *message_handler);
+    thing_options, goto_model, *message_handler);
   this->harness_function_name = harness_function_name;
   ensure_harness_does_not_already_exist();
 
@@ -155,6 +167,15 @@ void function_call_harness_generatort::validate_options()
     throw invalid_command_line_argument_exceptiont{
       "required parameter entry function not set",
       "--" FUNCTION_HARNESS_GENERATOR_FUNCTION_OPT};
+  if(
+    p_impl->thing_options.min_null_tree_depth >
+    p_impl->thing_options.max_nondet_tree_depth)
+  {
+    throw invalid_command_line_argument_exceptiont{
+      "min null tree depth cannot be greater than max nondet tree depth",
+      "--" FUNCTION_HARNESS_GENERATOR_MIN_NULL_TREE_DEPTH_OPT
+      " | --" FUNCTION_HARNESS_GENERATOR_MAX_NONDET_TREE_DEPTH_OPT};
+  }
 }
 
 const symbolt &function_call_harness_generatort::implt::lookup_function_to_call()
