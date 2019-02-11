@@ -22,21 +22,15 @@ public:
   {
   }
 
-  exprt get_initialiser(const typet &, const exprt &depth);
+  exprt get_initialiser(const typet &, std::size_t depth, code_blockt &body);
 
 private:
   const nondet_thing_optionst options;
   goto_modelt &goto_model;
   message_handlert &message_handler;
-  std::map<typet, irep_idt> constructor_for_type;
-
-  irep_idt make_constructor_for_type(const typet &);
-  irep_idt make_struct_constructor(const struct_tag_typet &);
-  irep_idt make_nondet_constructor_for_type(const typet &);
-  symbolt &register_constructor_for_type(const typet &);
-  void finalize_constructor(const symbolt &constructor_symbol);
-
-  irep_idt make_pointer_constructor(const pointer_typet &type);
-  symbol_exprt get_depth_param_from_constructor(const symbolt &constructor);
   symbol_exprt get_malloc_function();
+
+  exprt get_struct_tag_initializer(const struct_tag_typet& type, std::size_t depth, code_blockt& body);
+  exprt get_pointer_initializer( const pointer_typet &type, std::size_t depth, code_blockt &body);
+  exprt get_nondet_initializer(const typet& type, std::size_t depth, code_blockt &body);
 };

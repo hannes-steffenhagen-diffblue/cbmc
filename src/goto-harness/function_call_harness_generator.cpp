@@ -158,7 +158,7 @@ void function_call_harness_generatort::implt::generate_initialisation_code_for(
   const exprt &lhs)
 {
   block.add(code_assignt{lhs, thing->get_initialiser(lhs.type(), 
-    from_integer(0, unsignedbv_typet{32}))});
+    0, block)});
 }
 
 void function_call_harness_generatort::validate_options()
