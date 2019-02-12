@@ -157,8 +157,7 @@ void function_call_harness_generatort::implt::generate_initialisation_code_for(
   code_blockt &block,
   const exprt &lhs)
 {
-  block.add(code_assignt{lhs, thing->get_initialiser(lhs.type(), 
-    0, block)});
+  thing->get_initialiser(lhs, 0, block);
 }
 
 void function_call_harness_generatort::validate_options()
@@ -167,15 +166,6 @@ void function_call_harness_generatort::validate_options()
     throw invalid_command_line_argument_exceptiont{
       "required parameter entry function not set",
       "--" FUNCTION_HARNESS_GENERATOR_FUNCTION_OPT};
-  if(
-    p_impl->thing_options.min_null_tree_depth >
-    p_impl->thing_options.max_nondet_tree_depth)
-  {
-    throw invalid_command_line_argument_exceptiont{
-      "min null tree depth cannot be greater than max nondet tree depth",
-      "--" FUNCTION_HARNESS_GENERATOR_MIN_NULL_TREE_DEPTH_OPT
-      " | --" FUNCTION_HARNESS_GENERATOR_MAX_NONDET_TREE_DEPTH_OPT};
-  }
 }
 
 const symbolt &function_call_harness_generatort::implt::lookup_function_to_call()

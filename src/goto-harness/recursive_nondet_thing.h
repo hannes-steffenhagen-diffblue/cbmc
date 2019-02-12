@@ -22,7 +22,7 @@ public:
   {
   }
 
-  exprt get_initialiser(const typet &, std::size_t depth, code_blockt &body);
+  void get_initialiser(const exprt &, std::size_t depth, code_blockt &body);
 
 private:
   const nondet_thing_optionst options;
@@ -30,7 +30,7 @@ private:
   message_handlert &message_handler;
   symbol_exprt get_malloc_function();
 
-  exprt get_struct_tag_initializer(const struct_tag_typet& type, std::size_t depth, code_blockt& body);
-  exprt get_pointer_initializer( const pointer_typet &type, std::size_t depth, code_blockt &body);
-  exprt get_nondet_initializer(const typet& type, std::size_t depth, code_blockt &body);
+  void get_struct_tag_initializer(const exprt &lhs, std::size_t depth, code_blockt &body);
+  void get_pointer_initializer(const exprt &lhs, std::size_t depth, code_blockt &body);
+  void get_nondet_initializer(const exprt &lhs, std::size_t depth, code_blockt &body);
 };
