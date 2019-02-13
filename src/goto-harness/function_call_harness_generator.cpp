@@ -19,7 +19,7 @@ Author: Diffblue Ltd.
 
 #include "function_harness_generator_options.h"
 #include "goto_harness_parse_options.h"
-#include "recursive_nondet_thing.h"
+#include "recursive_initialization.h"
 
 struct function_call_harness_generatort::implt
 {
@@ -30,8 +30,8 @@ struct function_call_harness_generatort::implt
   goto_functionst *goto_functions;
   bool nondet_globals = false;
 
-  nondet_thing_optionst thing_options;
-  std::unique_ptr<recursive_nondet_thing> thing;
+  recursive_initialization_configt recursive_initialization_config;
+  std::unique_ptr<recursive_initializationt> recursive_initialization;
 
   void generate(goto_modelt &goto_model, const irep_idt &harness_function_name);
   void generate_nondet_globals(code_blockt &function_body);
@@ -66,12 +66,14 @@ void function_call_harness_generatort::handle_option(
   else if(option == FUNCTION_HARNESS_GENERATOR_MIN_NULL_TREE_DEPTH_OPT)
   {
     auto const value = require_exactly_one_value(option, values);
-    p_impl->thing_options.min_null_tree_depth = std::stoul(value);
+    p_impl->recursive_initialization_config.min_null_tree_depth =
+      std::stoul(value);
   }
   else if(option == FUNCTION_HARNESS_GENERATOR_MAX_NONDET_TREE_DEPTH_OPT)
   {
     auto const value = require_exactly_one_value(option, values);
-    p_impl->thing_options.max_nondet_tree_depth = std::stoul(value);
+    p_impl->recursive_initialization_config.max_nondet_tree_depth =
+      std::stoul(value);
   }
   else
   {
@@ -122,8 +124,8 @@ void function_call_harness_generatort::implt::generate(
 {
   symbol_table = &goto_model.symbol_table;
   goto_functions = &goto_model.goto_functions;
-  thing = util_make_unique<recursive_nondet_thing>(
-    thing_options, goto_model, *message_handler);
+  recursive_initialization = util_make_unique<recursive_initializationt>(
+    recursive_initialization_config, goto_model, *message_handler);
   this->harness_function_name = harness_function_name;
   ensure_harness_does_not_already_exist();
 
@@ -157,7 +159,7 @@ void function_call_harness_generatort::implt::generate_initialisation_code_for(
   code_blockt &block,
   const exprt &lhs)
 {
-  thing->get_initialiser(lhs, 0, block);
+  recursive_initialization->initialize(lhs, 0, block);
 }
 
 void function_call_harness_generatort::validate_options()
