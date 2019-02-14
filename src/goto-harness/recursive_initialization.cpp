@@ -154,22 +154,68 @@ void recursive_initializationt::initialize_array(
   }
 }
 
-// bool recursive_initializationt::should_be_treated_as_array(const irep_idt &array_name) const
-// {
-//   return
-//     initialization_config.pointers_to_treat_as_arrays.find(array_name) !=
-//       initialization_config.pointers_to_treat_as_arrays.end();
-// }
+bool recursive_initializationt::should_be_treated_as_array(const irep_idt &array_name) const
+{
+  return
+    initialization_config.pointers_to_treat_as_arrays.find(array_name) !=
+      initialization_config.pointers_to_treat_as_arrays.end();
+}
 
-// bool recursive_initializationt::is_array_size_parameter(const irep_idt &cmdline_arg) const
-// {
-//   return initialization_config.variables_that_hold_array_sizes.find(cmdline_arg) !=
-//     initialization_config.variables_that_hold_array_sizes.end();
-// }
+bool recursive_initializationt::is_array_size_parameter(const irep_idt &cmdline_arg) const
+{
+  return initialization_config.variables_that_hold_array_sizes.find(cmdline_arg) !=
+    initialization_config.variables_that_hold_array_sizes.end();
+}
 
-// optionalt<irep_idt>
-// recursive_initializationt::get_associated_size_variable(const irep_idt &array_name) const
-// {
-//   return optional_lookup(
-//     initialization_config.array_name_to_associated_array_size_variable, array_name);
-// }
+optionalt<irep_idt>
+recursive_initializationt::get_associated_size_variable(const irep_idt &array_name) const
+{
+  return optional_lookup(
+    initialization_config.array_name_to_associated_array_size_variable, array_name);
+}
+
+void recursive_initializationt::initialize_dynamic_array(
+  const exprt &pointer, std::size_t depth, const recursion_sett &known_tags, code_blockt &body)
+{
+  PRECONDITION(pointer.type().id() == ID_pointer);
+  const auto &pointer_type = to_pointer_type(pointer.type());
+  allocate_objectst allocate_objects{initialization_config.mode,
+                                     pointer_type.source_location(),
+                                     "initializer",
+                                     goto_model.symbol_table};
+  auto min_array_size = initialization_config.mini_dynamic_array_size;
+  auto max_array_size = initialization_config.maxi_dynamic_array_size;
+  PRECONDITION(max_array_size >= min_array_size);
+  std::vector<symbol_exprt> array_variables;
+  auto number_of_arrays = max_array_size - min_array_size + 1;
+
+
+  for (auto array_size = min_array_size; array_size < max_array_size; array_size++)
+  {
+    array_variables.push_back(allocate_objects.allocate_automatic_local_object(
+      array_typet{pointer_type.subtype(), from_integer(array_size, size_type())},
+      "array"
+    ));
+  }
+
+  const auto arrays = allocate_objects.allocate_automatic_local_object(
+    array_typet{pointer_type, from_integer(number_of_arrays, size_type())},
+    "arrays");
+
+  const auto nondet_index = allocate_objects.allocate_automatic_local_object(
+    size_type(), "nondet_index");
+
+  allocate_objects.declare_created_symbols(body);
+
+  for (const auto &array_variable : array_variables)
+  {
+    initialize(array_variable, depth + 1, known_tags, body);
+  }
+
+  body.add(code_assumet{
+    binary_relation_exprt{
+      nondet_index, ID_lt, from_integer(number_of_arrays, size_type())}});
+
+  body.add(code_assignt{
+    pointer, index_exprt{arrays, nondet_index}});
+}
