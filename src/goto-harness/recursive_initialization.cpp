@@ -9,11 +9,15 @@ Author: Diffblue Ltd.
 #include "recursive_initialization.h"
 
 #include <util/allocate_objects.h>
+#include <util/arith_tools.h>
 #include <util/c_types.h>
 #include <util/fresh_symbol.h>
 #include <util/irep.h>
+#include <util/optional.h>
+#include <util/optional_utils.h>
 #include <util/std_code.h>
 #include <util/std_expr.h>
+#include <util/std_types.h>
 
 recursive_initializationt::recursive_initializationt(
   recursive_initialization_configt initialization_config,
@@ -37,6 +41,10 @@ void recursive_initializationt::initialize(
   else if(type.id() == ID_pointer)
   {
     initialize_pointer(lhs, depth, known_tags, body);
+  }
+  else if(type.id() == ID_array)
+  {
+    initialize_array(lhs, depth, known_tags, body);
   }
   else
   {
@@ -129,3 +137,39 @@ void recursive_initializationt::initialize_nondet(
 {
   body.add(code_assignt{lhs, side_effect_expr_nondett{lhs.type()}});
 }
+
+void recursive_initializationt::initialize_array(
+  const exprt &array,
+  std::size_t depth,
+  const recursion_sett &known_tags,
+  code_blockt &body)
+{
+  PRECONDITION(array.type().id() == ID_array);
+  const auto &array_type = to_array_type(array.type());
+  const auto array_size = numeric_cast_v<std::size_t>(array_type.size());
+  for(std::size_t index = 0; index < array_size; index++)
+  {
+    initialize(
+      index_exprt(array, from_integer(index, size_type())), depth, known_tags, body);
+  }
+}
+
+// bool recursive_initializationt::should_be_treated_as_array(const irep_idt &array_name) const
+// {
+//   return
+//     initialization_config.pointers_to_treat_as_arrays.find(array_name) !=
+//       initialization_config.pointers_to_treat_as_arrays.end();
+// }
+
+// bool recursive_initializationt::is_array_size_parameter(const irep_idt &cmdline_arg) const
+// {
+//   return initialization_config.variables_that_hold_array_sizes.find(cmdline_arg) !=
+//     initialization_config.variables_that_hold_array_sizes.end();
+// }
+
+// optionalt<irep_idt>
+// recursive_initializationt::get_associated_size_variable(const irep_idt &array_name) const
+// {
+//   return optional_lookup(
+//     initialization_config.array_name_to_associated_array_size_variable, array_name);
+// }
