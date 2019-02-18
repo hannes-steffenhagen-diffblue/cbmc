@@ -146,7 +146,7 @@ void recursive_initializationt::initialize_array(
 {
   PRECONDITION(array.type().id() == ID_array);
   const auto &array_type = to_array_type(array.type());
-  const auto array_size = numeric_cast_v<std::size_t>(array_type.size());
+  const auto array_size = numeric_cast_v<std::size_t>(to_constant_expr(array_type.size()));
   for(std::size_t index = 0; index < array_size; index++)
   {
     initialize(
