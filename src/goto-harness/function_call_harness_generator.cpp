@@ -114,6 +114,22 @@ void function_call_harness_generatort::handle_option(
         "--" FUNCTION_HARNESS_GENERATOR_MAX_NONDET_TREE_DEPTH_OPT};
     }
   }
+  else if(option == FUNCTION_HARNESS_GENERATOR_MAX_ARRAY_SIZE_OPT)
+  {
+    p_impl->recursive_initialization_config.maxi_dynamic_array_size =
+      require_one_size_value(FUNCTION_HARNESS_GENERATOR_MAX_ARRAY_SIZE_OPT, values);
+  }
+  else if(option == FUNCTION_HARNESS_GENERATOR_MIN_ARRAY_SIZE_OPT)
+  {
+    p_impl->recursive_initialization_config.mini_dynamic_array_size =
+      require_one_size_value(FUNCTION_HARNESS_GENERATOR_MIN_ARRAY_SIZE_OPT,
+        values);
+  }
+  else if(option == FUNCTION_HARNESS_GENERATOR_TREAT_POINTER_AS_ARRAY_OPT)
+  {
+    p_impl->function_arguments_to_treat_as_arrays.insert(
+      require_exactly_one_value(FUNCTION_HARNESS_GENERATOR_TREAT_POINTER_AS_ARRAY_OPT, values));
+  }
   else
   {
     throw invalid_command_line_argument_exceptiont{
@@ -184,6 +200,22 @@ void function_call_harness_generatort::validate_options()
     throw invalid_command_line_argument_exceptiont{
       "required parameter entry function not set",
       "--" FUNCTION_HARNESS_GENERATOR_FUNCTION_OPT};
+  if(p_impl->recursive_initialization_config.mini_dynamic_array_size > p_impl->recursive_initialization_config.maxi_dynamic_array_size)
+  {
+    throw invalid_command_line_argument_exceptiont{
+      "min dynamic array size cannot be greater than max dynamic array size",
+      "--" FUNCTION_HARNESS_GENERATOR_MIN_ARRAY_SIZE_OPT
+      " --" FUNCTION_HARNESS_GENERATOR_MAX_ARRAY_SIZE_OPT
+    };
+  }
+}
+
+std::size_t
+function_call_harness_generatort::require_one_size_value(const std::string &option, const std::list<std::string> &values) {
+  static
+  auto const string_value = require_exactly_one_value(option, values);
+  // TODO replace this with string2optional
+  return narrow<std::size_t>(std::stoull(string_value));
 }
 
 const symbolt &
