@@ -127,8 +127,9 @@ void function_call_harness_generatort::handle_option(
   }
   else if(option == FUNCTION_HARNESS_GENERATOR_TREAT_POINTER_AS_ARRAY_OPT)
   {
-    p_impl->function_arguments_to_treat_as_arrays.insert(
-      require_exactly_one_value(FUNCTION_HARNESS_GENERATOR_TREAT_POINTER_AS_ARRAY_OPT, values));
+    p_impl->function_parameters_to_treat_as_arrays.insert(
+      require_exactly_one_value(
+        FUNCTION_HARNESS_GENERATOR_TREAT_POINTER_AS_ARRAY_OPT, values));
   }
   else
   {

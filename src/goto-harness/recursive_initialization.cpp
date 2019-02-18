@@ -40,7 +40,16 @@ void recursive_initializationt::initialize(
   }
   else if(type.id() == ID_pointer)
   {
-    initialize_pointer(lhs, depth, known_tags, body);
+    if(
+      lhs.id() == ID_symbol &&
+      should_be_treated_as_array(to_symbol_expr(lhs).get_identifier()))
+    {
+      initialize_dynamic_array(lhs, depth, known_tags, body);
+    }
+    else
+    {
+      initialize_pointer(lhs, depth, known_tags, body);
+    }
   }
   else if(type.id() == ID_array)
   {
@@ -189,8 +198,8 @@ void recursive_initializationt::initialize_dynamic_array(
   std::vector<symbol_exprt> array_variables;
   auto number_of_arrays = max_array_size - min_array_size + 1;
 
-
-  for (auto array_size = min_array_size; array_size < max_array_size; array_size++)
+  for(auto array_size = min_array_size; array_size <= max_array_size;
+      array_size++)
   {
     array_variables.push_back(allocate_objects.allocate_automatic_local_object(
       array_typet{pointer_type.subtype(), from_integer(array_size, size_type())},
@@ -207,14 +216,20 @@ void recursive_initializationt::initialize_dynamic_array(
 
   allocate_objects.declare_created_symbols(body);
 
+  std::size_t array_counter = 0;
   for (const auto &array_variable : array_variables)
   {
     initialize(array_variable, depth + 1, known_tags, body);
+    body.add(code_assignt{
+      index_exprt{arrays, from_integer(array_counter++, size_type())},
+      address_of_exprt{
+        index_exprt{array_variable, from_integer(0, size_type())}}});
   }
-
-  body.add(code_assumet{
+  INVARIANT(array_counter == number_of_arrays, "initialized all arrays");
+  body.add(code_assumet{and_exprt{
+    binary_relation_exprt{nondet_index, ID_ge, from_integer(0, size_type())},
     binary_relation_exprt{
-      nondet_index, ID_lt, from_integer(number_of_arrays, size_type())}});
+      nondet_index, ID_lt, from_integer(number_of_arrays, size_type())}}});
 
   body.add(code_assignt{
     pointer, index_exprt{arrays, nondet_index}});
