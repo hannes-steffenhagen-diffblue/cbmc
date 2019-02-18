@@ -1,3 +1,3 @@
 CORE
---harness-type call-function --function do_array --treat-pointer-as-array list_array --min-array-size 2 --min-null-tree-depth 2 --max-nondet-tree-depth 2
+--harness-type call-function --function do_array --treat-pointer-as-array list_array1 --min-array-size 2 --min-null-tree-depth 2 --max-nondet-tree-depth 2 --treat-pointer-as-array list_array2
 VERIFICATION SUCCESSFUL

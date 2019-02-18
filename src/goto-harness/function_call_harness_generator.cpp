@@ -18,6 +18,7 @@ Author: Diffblue Ltd.
 #include <util/string2int.h>
 #include <util/ui_message.h>
 
+#include <algorithm>
 #include <set>
 
 #include "function_harness_generator_options.h"
@@ -127,9 +128,9 @@ void function_call_harness_generatort::handle_option(
   }
   else if(option == FUNCTION_HARNESS_GENERATOR_TREAT_POINTER_AS_ARRAY_OPT)
   {
-    p_impl->function_parameters_to_treat_as_arrays.insert(
-      require_exactly_one_value(
-        FUNCTION_HARNESS_GENERATOR_TREAT_POINTER_AS_ARRAY_OPT, values));
+    std::copy(values.begin(), values.end(),
+              std::inserter(p_impl->function_parameters_to_treat_as_arrays,
+                            p_impl->function_parameters_to_treat_as_arrays.end()));
   }
   else
   {
