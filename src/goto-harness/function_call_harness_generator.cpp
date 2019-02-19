@@ -16,6 +16,7 @@ Author: Diffblue Ltd.
 #include <util/std_code.h>
 #include <util/std_expr.h>
 #include <util/string2int.h>
+#include <util/string_utils.h>
 #include <util/ui_message.h>
 
 #include <algorithm>
@@ -43,6 +44,9 @@ struct function_call_harness_generatort::implt
 
   std::set<irep_idt> function_parameters_to_treat_as_arrays;
   std::set<irep_idt> function_arguments_to_treat_as_arrays;
+
+  std::map<irep_idt, irep_idt> function_argument_to_associated_array_size;
+  std::map<irep_idt, irep_idt> function_parameter_to_associated_array_size;
 
   /// \see goto_harness_generatort::generate
   void generate(goto_modelt &goto_model, const irep_idt &harness_function_name);
@@ -131,6 +135,37 @@ void function_call_harness_generatort::handle_option(
     std::copy(values.begin(), values.end(),
               std::inserter(p_impl->function_parameters_to_treat_as_arrays,
                             p_impl->function_parameters_to_treat_as_arrays.end()));
+  }
+  else if(option == FUNCTION_HARNESS_GENERATOR_ASSOCIATED_ARRAY_SIZE_OPT)
+  {
+    for(auto const &array_size_pair : values)
+    {
+      std::string array;
+      std::string size;
+      try {
+        split_string(array_size_pair, ':', array, size);
+        // --associated-array-size implies --treat-pointer-as-array
+        // but it is not an error to specify both, so we don't check
+        // for duplicates here
+        p_impl->function_parameters_to_treat_as_arrays.insert(array);
+        auto const inserted = p_impl->function_parameter_to_associated_array_size
+          .insert({array, size});
+        if(!inserted.second)
+        {
+          throw invalid_command_line_argument_exceptiont{
+            "can not have two associated array sizes for one array",
+            "--" FUNCTION_HARNESS_GENERATOR_ASSOCIATED_ARRAY_SIZE_OPT
+          };
+        }
+      } catch(const deserialization_exceptiont&)
+      {
+        throw invalid_command_line_argument_exceptiont{
+          "`" + array_size_pair + "' is in an invalid format for array size pair",
+            "--" FUNCTION_HARNESS_GENERATOR_ASSOCIATED_ARRAY_SIZE_OPT,
+            "array_name:size_name, where both are the names of function parameters"
+        };
+      }
+    }
   }
   else
   {
@@ -289,16 +324,27 @@ code_function_callt::argumentst function_call_harness_generatort::implt::declare
                                               function_to_call.location,
                                               "__goto_harness",
                                               *symbol_table};
+    struct parameter_argument_pairt {
+      irep_idt parameter;
+      irep_idt argument;
+    };
+    std::vector<parameter_argument_pairt> argument_name_to_parameter_name;
     for(const auto &parameter : parameters)
     {
       auto argument = allocate_objects.allocate_automatic_local_object(
         parameter.type(), parameter.get_base_name());
-      if(function_parameters_to_treat_as_arrays.find(parameter.get_base_name()) !=
-          function_parameters_to_treat_as_arrays.end())
-      {
-        function_arguments_to_treat_as_arrays.insert(argument.get_identifier());
-      }
+      argument_name_to_parameter_name.insert({parameter.get_identifier(),
+            argument.get_identifier()});
       arguments.push_back(argument);
+    }
+
+    for(const auto &p : argument_name_to_parameter_name)
+    {
+      if(function_parameters_to_treat_as_arrays.find(p.parameter)
+         != function_parameters_to_treat_as_arrays.end())
+      {
+        function_arguments_to_treat_as_arrays.insert(p.argument);
+      }
     }
     allocate_objects.declare_created_symbols(function_body);
     return arguments;

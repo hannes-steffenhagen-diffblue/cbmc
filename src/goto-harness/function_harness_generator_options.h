@@ -30,6 +30,7 @@ Author: Diffblue Ltd.
   "(" FUNCTION_HARNESS_GENERATOR_MIN_ARRAY_SIZE_OPT "):"                       \
   "(" FUNCTION_HARNESS_GENERATOR_MAX_ARRAY_SIZE_OPT "):"                       \
   "(" FUNCTION_HARNESS_GENERATOR_TREAT_POINTER_AS_ARRAY_OPT "):"               \
+  "(" FUNCTION_HARNESS_GENERATOR_ASSOCIATED_ARRAY_SIZE_OPT "):"                \
 // FUNCTION_HARNESS_GENERATOR_OPTIONS
 
 // clang-format on
@@ -53,7 +54,14 @@ Author: Diffblue Ltd.
   " N    maximum size of dynamically created arrays (default: 2)\n"            \
   "--" FUNCTION_HARNESS_GENERATOR_TREAT_POINTER_AS_ARRAY_OPT                   \
   " parameter    treat the function parameter with the name `parameter'\n"     \
-  "                   as an array"                                             \
+  "                   as an array\n"                                           \
+  "--" FUNCTION_HARNESS_GENERATOR_ASSOCIATED_ARRAY_SIZE_OPT                    \
+  " array_name:size_name\n"                                                    \
+  "                                set the parameter <size_name> to the size\n"\
+  "                                of the array <array_name>\n"                \
+  "                                (implies "                                  \
+  "-- " FUNCTION_HARNESS_GENERATOR_ASSOCIATED_ARRAY_SIZE_OPT                   \
+  " <array_name>)\n"                                                           \
   // FUNCTION_HARNESS_GENERATOR_HELP
 
 // clang-format on
