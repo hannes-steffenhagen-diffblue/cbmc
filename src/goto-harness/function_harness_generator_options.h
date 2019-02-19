@@ -18,6 +18,8 @@ Author: Diffblue Ltd.
 #define FUNCTION_HARNESS_GENERATOR_MAX_ARRAY_SIZE_OPT "max-array-size"
 #define FUNCTION_HARNESS_GENERATOR_TREAT_POINTER_AS_ARRAY_OPT                  \
   "treat-pointer-as-array"
+#define FUNCTION_HARNESS_GENERATOR_ASSOCIATED_ARRAY_SIZE_OPT                   \
+  "associated-array-size"
 
 // clang-format off
 #define FUNCTION_HARNESS_GENERATOR_OPTIONS                                     \
