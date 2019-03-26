@@ -17,6 +17,7 @@ DIRS = analyses \
        json-symtab-language \
        langapi \
        linking \
+       memory-analyzer \
        pointer-analysis \
        solvers \
        util \
@@ -29,6 +30,7 @@ all: cbmc.dir \
      goto-diff.dir \
      goto-instrument.dir \
      goto-harness.dir \
+     memory-analyzer.dir \
      # Empty last line
 
 ###############################################################################
@@ -68,6 +70,8 @@ goto-diff.dir: languages goto-programs.dir pointer-analysis.dir \
                solvers.dir goto-symex.dir
 
 goto-cc.dir: languages goto-programs.dir linking.dir
+
+memory-analyzer.dir: util.dir goto-programs.dir ansi-c.dir
 
 # building for a particular directory
 
