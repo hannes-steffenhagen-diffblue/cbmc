@@ -1,0 +1,598 @@
+[
+  {
+    "program": "MEMORY-ANALYZER 5.11 (cbmc-5.11-2090-g25aeb6e0f-dirty)"
+  },
+  {
+    "symbolTable": {
+      "__CPROVER_size_t": {
+        "baseName": "__CPROVER_size_t",
+        "isAuxiliary": false,
+        "isExported": false,
+        "isExtern": false,
+        "isFileLocal": true,
+        "isInput": false,
+        "isLvalue": false,
+        "isMacro": true,
+        "isOutput": false,
+        "isParameter": false,
+        "isProperty": false,
+        "isStateVar": false,
+        "isStaticLifetime": false,
+        "isThreadLocal": true,
+        "isType": true,
+        "isVolatile": false,
+        "isWeak": false,
+        "location": {
+          "id": "",
+          "namedSub": {
+            "file": {
+              "id": "<built-in-additions>"
+            },
+            "line": {
+              "id": "1"
+            },
+            "working_directory": {
+              "id": "/home/diffblue/petr.bauch/code/cbmc/regression/memory-analyzer/pointer_to_struct_01"
+            }
+          }
+        },
+        "mode": "C",
+        "module": "main",
+        "name": "__CPROVER_size_t",
+        "prettyName": "__CPROVER_size_t",
+        "prettyType": "__CPROVER_size_t",
+        "prettyValue": "",
+        "type": {
+          "id": "unsignedbv",
+          "namedSub": {
+            "#c_type": {
+              "id": "unsigned_long_int"
+            },
+            "#source_location": {
+              "id": "",
+              "namedSub": {
+                "file": {
+                  "id": "<built-in-additions>"
+                },
+                "line": {
+                  "id": "1"
+                },
+                "working_directory": {
+                  "id": "/home/diffblue/petr.bauch/code/cbmc/regression/memory-analyzer/pointer_to_struct_01"
+                }
+              }
+            },
+            "#typedef": {
+              "id": "__CPROVER_size_t"
+            },
+            "width": {
+              "id": "64"
+            }
+          }
+        },
+        "value": {
+          "id": "nil"
+        }
+      },
+      "tag-S": {
+        "baseName": "S",
+        "isAuxiliary": false,
+        "isExported": false,
+        "isExtern": false,
+        "isFileLocal": false,
+        "isInput": false,
+        "isLvalue": false,
+        "isMacro": false,
+        "isOutput": false,
+        "isParameter": false,
+        "isProperty": false,
+        "isStateVar": false,
+        "isStaticLifetime": false,
+        "isThreadLocal": false,
+        "isType": true,
+        "isVolatile": false,
+        "isWeak": false,
+        "location": {
+          "id": "",
+          "namedSub": {
+            "file": {
+              "id": "main.c"
+            },
+            "function": {
+              "id": ""
+            },
+            "line": {
+              "id": "5"
+            },
+            "working_directory": {
+              "id": "/home/diffblue/petr.bauch/code/cbmc/regression/memory-analyzer/pointer_to_struct_01"
+            }
+          }
+        },
+        "mode": "C",
+        "module": "main",
+        "name": "tag-S",
+        "prettyName": "struct S",
+        "prettyType": "struct S { struct S *next; }",
+        "prettyValue": "",
+        "type": {
+          "id": "struct",
+          "namedSub": {
+            "#source_location": {
+              "id": "",
+              "namedSub": {
+                "file": {
+                  "id": "main.c"
+                },
+                "function": {
+                  "id": ""
+                },
+                "line": {
+                  "id": "5"
+                },
+                "working_directory": {
+                  "id": "/home/diffblue/petr.bauch/code/cbmc/regression/memory-analyzer/pointer_to_struct_01"
+                }
+              }
+            },
+            "components": {
+              "id": "",
+              "sub": [
+                {
+                  "id": "",
+                  "namedSub": {
+                    "#source_location": {
+                      "id": "",
+                      "namedSub": {
+                        "file": {
+                          "id": "main.c"
+                        },
+                        "function": {
+                          "id": ""
+                        },
+                        "line": {
+                          "id": "7"
+                        },
+                        "working_directory": {
+                          "id": "/home/diffblue/petr.bauch/code/cbmc/regression/memory-analyzer/pointer_to_struct_01"
+                        }
+                      }
+                    },
+                    "name": {
+                      "id": "next"
+                    },
+                    "pretty_name": {
+                      "id": "next"
+                    },
+                    "type": {
+                      "id": "pointer",
+                      "namedSub": {
+                        "#source_location": {
+                          "id": "",
+                          "namedSub": {
+                            "file": {
+                              "id": "main.c"
+                            },
+                            "function": {
+                              "id": ""
+                            },
+                            "line": {
+                              "id": "7"
+                            },
+                            "working_directory": {
+                              "id": "/home/diffblue/petr.bauch/code/cbmc/regression/memory-analyzer/pointer_to_struct_01"
+                            }
+                          }
+                        },
+                        "width": {
+                          "id": "64"
+                        }
+                      },
+                      "sub": [
+                        {
+                          "id": "struct_tag",
+                          "namedSub": {
+                            "#source_location": {
+                              "id": "",
+                              "namedSub": {
+                                "file": {
+                                  "id": "main.c"
+                                },
+                                "function": {
+                                  "id": ""
+                                },
+                                "line": {
+                                  "id": "7"
+                                },
+                                "working_directory": {
+                                  "id": "/home/diffblue/petr.bauch/code/cbmc/regression/memory-analyzer/pointer_to_struct_01"
+                                }
+                              }
+                            },
+                            "identifier": {
+                              "id": "tag-S"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            },
+            "tag": {
+              "id": "S"
+            }
+          }
+        },
+        "value": {
+          "id": "nil"
+        }
+      },
+      "st": {
+        "baseName": "st",
+        "isAuxiliary": false,
+        "isExported": false,
+        "isExtern": false,
+        "isFileLocal": false,
+        "isInput": false,
+        "isLvalue": true,
+        "isMacro": false,
+        "isOutput": false,
+        "isParameter": false,
+        "isProperty": false,
+        "isStateVar": false,
+        "isStaticLifetime": true,
+        "isThreadLocal": false,
+        "isType": false,
+        "isVolatile": false,
+        "isWeak": false,
+        "location": {
+          "id": "",
+          "namedSub": {
+            "file": {
+              "id": "main.c"
+            },
+            "function": {
+              "id": ""
+            },
+            "line": {
+              "id": "10"
+            },
+            "working_directory": {
+              "id": "/home/diffblue/petr.bauch/code/cbmc/regression/memory-analyzer/pointer_to_struct_01"
+            }
+          }
+        },
+        "mode": "C",
+        "module": "main",
+        "name": "st",
+        "prettyName": "st",
+        "prettyType": "struct S",
+        "prettyValue": "{ .next=&st }",
+        "type": {
+          "id": "struct_tag",
+          "namedSub": {
+            "#source_location": {
+              "id": "",
+              "namedSub": {
+                "file": {
+                  "id": "main.c"
+                },
+                "function": {
+                  "id": ""
+                },
+                "line": {
+                  "id": "10"
+                },
+                "working_directory": {
+                  "id": "/home/diffblue/petr.bauch/code/cbmc/regression/memory-analyzer/pointer_to_struct_01"
+                }
+              }
+            },
+            "identifier": {
+              "id": "tag-S"
+            }
+          }
+        },
+        "value": {
+          "id": "struct",
+          "namedSub": {
+            "#source_location": {
+              "id": "",
+              "namedSub": {
+                "file": {
+                  "id": "main.c"
+                },
+                "function": {
+                  "id": ""
+                },
+                "line": {
+                  "id": "10"
+                },
+                "working_directory": {
+                  "id": "/home/diffblue/petr.bauch/code/cbmc/regression/memory-analyzer/pointer_to_struct_01"
+                }
+              }
+            },
+            "type": {
+              "id": "struct_tag",
+              "namedSub": {
+                "#source_location": {
+                  "id": "",
+                  "namedSub": {
+                    "file": {
+                      "id": "main.c"
+                    },
+                    "function": {
+                      "id": ""
+                    },
+                    "line": {
+                      "id": "10"
+                    },
+                    "working_directory": {
+                      "id": "/home/diffblue/petr.bauch/code/cbmc/regression/memory-analyzer/pointer_to_struct_01"
+                    }
+                  }
+                },
+                "identifier": {
+                  "id": "tag-S"
+                }
+              }
+            }
+          },
+          "sub": [
+            {
+              "id": "address_of",
+              "namedSub": {
+                "type": {
+                  "id": "pointer",
+                  "namedSub": {
+                    "width": {
+                      "id": "64"
+                    }
+                  },
+                  "sub": [
+                    {
+                      "id": "struct_tag",
+                      "namedSub": {
+                        "#source_location": {
+                          "id": "",
+                          "namedSub": {
+                            "file": {
+                              "id": "main.c"
+                            },
+                            "function": {
+                              "id": ""
+                            },
+                            "line": {
+                              "id": "7"
+                            },
+                            "working_directory": {
+                              "id": "/home/diffblue/petr.bauch/code/cbmc/regression/memory-analyzer/pointer_to_struct_01"
+                            }
+                          }
+                        },
+                        "identifier": {
+                          "id": "tag-S"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "sub": [
+                {
+                  "id": "symbol",
+                  "namedSub": {
+                    "identifier": {
+                      "id": "st"
+                    },
+                    "type": {
+                      "id": "struct_tag",
+                      "namedSub": {
+                        "#source_location": {
+                          "id": "",
+                          "namedSub": {
+                            "file": {
+                              "id": "main.c"
+                            },
+                            "function": {
+                              "id": ""
+                            },
+                            "line": {
+                              "id": "7"
+                            },
+                            "working_directory": {
+                              "id": "/home/diffblue/petr.bauch/code/cbmc/regression/memory-analyzer/pointer_to_struct_01"
+                            }
+                          }
+                        },
+                        "identifier": {
+                          "id": "tag-S"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "p": {
+        "baseName": "p",
+        "isAuxiliary": false,
+        "isExported": false,
+        "isExtern": false,
+        "isFileLocal": false,
+        "isInput": false,
+        "isLvalue": true,
+        "isMacro": false,
+        "isOutput": false,
+        "isParameter": false,
+        "isProperty": false,
+        "isStateVar": false,
+        "isStaticLifetime": true,
+        "isThreadLocal": false,
+        "isType": false,
+        "isVolatile": false,
+        "isWeak": false,
+        "location": {
+          "id": "",
+          "namedSub": {
+            "file": {
+              "id": "main.c"
+            },
+            "function": {
+              "id": ""
+            },
+            "line": {
+              "id": "11"
+            },
+            "working_directory": {
+              "id": "/home/diffblue/petr.bauch/code/cbmc/regression/memory-analyzer/pointer_to_struct_01"
+            }
+          }
+        },
+        "mode": "C",
+        "module": "main",
+        "name": "p",
+        "prettyName": "p",
+        "prettyType": "struct S *",
+        "prettyValue": "&st",
+        "type": {
+          "id": "pointer",
+          "namedSub": {
+            "#source_location": {
+              "id": "",
+              "namedSub": {
+                "file": {
+                  "id": "main.c"
+                },
+                "function": {
+                  "id": ""
+                },
+                "line": {
+                  "id": "11"
+                },
+                "working_directory": {
+                  "id": "/home/diffblue/petr.bauch/code/cbmc/regression/memory-analyzer/pointer_to_struct_01"
+                }
+              }
+            },
+            "width": {
+              "id": "64"
+            }
+          },
+          "sub": [
+            {
+              "id": "struct_tag",
+              "namedSub": {
+                "#source_location": {
+                  "id": "",
+                  "namedSub": {
+                    "file": {
+                      "id": "main.c"
+                    },
+                    "function": {
+                      "id": ""
+                    },
+                    "line": {
+                      "id": "11"
+                    },
+                    "working_directory": {
+                      "id": "/home/diffblue/petr.bauch/code/cbmc/regression/memory-analyzer/pointer_to_struct_01"
+                    }
+                  }
+                },
+                "identifier": {
+                  "id": "tag-S"
+                }
+              }
+            }
+          ]
+        },
+        "value": {
+          "id": "address_of",
+          "namedSub": {
+            "type": {
+              "id": "pointer",
+              "namedSub": {
+                "width": {
+                  "id": "64"
+                }
+              },
+              "sub": [
+                {
+                  "id": "struct_tag",
+                  "namedSub": {
+                    "#source_location": {
+                      "id": "",
+                      "namedSub": {
+                        "file": {
+                          "id": "main.c"
+                        },
+                        "function": {
+                          "id": ""
+                        },
+                        "line": {
+                          "id": "11"
+                        },
+                        "working_directory": {
+                          "id": "/home/diffblue/petr.bauch/code/cbmc/regression/memory-analyzer/pointer_to_struct_01"
+                        }
+                      }
+                    },
+                    "identifier": {
+                      "id": "tag-S"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "sub": [
+            {
+              "id": "symbol",
+              "namedSub": {
+                "identifier": {
+                  "id": "st"
+                },
+                "type": {
+                  "id": "struct_tag",
+                  "namedSub": {
+                    "#source_location": {
+                      "id": "",
+                      "namedSub": {
+                        "file": {
+                          "id": "main.c"
+                        },
+                        "function": {
+                          "id": ""
+                        },
+                        "line": {
+                          "id": "11"
+                        },
+                        "working_directory": {
+                          "id": "/home/diffblue/petr.bauch/code/cbmc/regression/memory-analyzer/pointer_to_struct_01"
+                        }
+                      }
+                    },
+                    "identifier": {
+                      "id": "tag-S"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "messageText": "",
+    "messageType": "STATUS-MESSAGE"
+  }
+]
