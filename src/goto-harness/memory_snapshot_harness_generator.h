@@ -117,6 +117,10 @@ protected:
   /// \param goto_model: Model where the modification takes place
   void add_init_section(goto_modelt &goto_model) const;
 
+  const symbolt &fresh_symbol_copy(
+    const symbolt &snapshot_symbol,
+    symbol_tablet &symbol_table) const;
+
   /// For each global symbol in the \p snapshot symbol table either:
   /// 1) add \ref code_assignt assigning a value from the \p snapshot to the
   ///    symbol

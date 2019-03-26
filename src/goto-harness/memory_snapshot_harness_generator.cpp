@@ -200,6 +200,23 @@ void memory_snapshot_harness_generatort::add_init_section(
                                   : start_it)));
 }
 
+const symbolt &memory_snapshot_harness_generatort::fresh_symbol_copy(
+  const symbolt &snapshot_symbol,
+  symbol_tablet &symbol_table) const
+{
+  symbolt &tmp_symbol = get_fresh_aux_symbol(
+    snapshot_symbol.type,
+    "",
+    id2string(snapshot_symbol.base_name),
+    snapshot_symbol.location,
+    snapshot_symbol.mode,
+    symbol_table);
+  tmp_symbol.is_static_lifetime = true;
+  tmp_symbol.value = snapshot_symbol.value;
+
+  return tmp_symbol;
+}
+
 code_blockt memory_snapshot_harness_generatort::add_assignments_to_globals(
   const symbol_tablet &snapshot,
   goto_modelt &goto_model) const
@@ -210,9 +227,15 @@ code_blockt memory_snapshot_harness_generatort::add_assignments_to_globals(
   code_blockt code;
   for(const auto &pair : snapshot)
   {
-    const symbolt &symbol = pair.second;
-    if(!symbol.is_static_lifetime)
+    const symbolt &snapshot_symbol = pair.second;
+    if(!snapshot_symbol.is_static_lifetime)
       continue;
+
+    symbol_tablet &symbol_table = goto_model.symbol_table;
+    const symbolt &symbol =
+      (symbol_table.lookup(snapshot_symbol.base_name) != nullptr)
+        ? snapshot_symbol
+        : fresh_symbol_copy(snapshot_symbol, symbol_table);
 
     if(variables_to_havoc.count(symbol.base_name) == 0)
     {
