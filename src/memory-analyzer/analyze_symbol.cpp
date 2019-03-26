@@ -232,7 +232,9 @@ exprt symbol_analyzert::get_non_char_pointer_value(
   }
   else
   {
-    return it->second;
+    const symbol_exprt typed_symbol_value = symbol_exprt{
+      to_symbol_expr(it->second).get_identifier(), expr.type().subtype()};
+    return typed_symbol_value;
   }
 }
 
@@ -268,7 +270,9 @@ exprt symbol_analyzert::get_pointer_value(
       }
       else
       {
-        return address_of_exprt(target_expr);
+        const auto result_expr = address_of_exprt(target_expr);
+        CHECK_RETURN(result_expr.type() == zero_expr.type());
+        return result_expr;
       }
     }
   }
