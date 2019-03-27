@@ -9,9 +9,15 @@ void initialize()
   p = (void *)&x;
 }
 
+void checkpoint()
+{
+}
+
 int main()
 {
-  //initialize();
+  initialize();
+  checkpoint();
+
   assert(*(int *)p == 3);
 
   return 0;

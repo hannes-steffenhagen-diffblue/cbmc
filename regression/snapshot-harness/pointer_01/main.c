@@ -3,15 +3,20 @@
 int x;
 int *p;
 
-//not run here: it's what the snapshot should contain
 void initialize()
 {
   x = 3;
   p = &x;
 }
 
+void checkpoint()
+{
+}
+
 int main()
 {
-  //  initialize();
+  initialize();
+  checkpoint();
+
   assert(*p == x);
 }

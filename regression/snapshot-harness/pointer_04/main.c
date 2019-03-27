@@ -11,9 +11,14 @@ void initialize()
   p2 = &p1;
 }
 
+void checkpoint()
+{
+}
+
 int main()
 {
-  //initialize();
+  initialize();
+  checkpoint();
 
   assert(&p1 == *p2);
   assert(*p2 == p1);

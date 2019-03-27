@@ -21,8 +21,9 @@ void checkpoint()
 
 int main()
 {
-  //initialize();
-  //checkpoint();
+  initialize();
+  checkpoint();
+
   assert(st.c1 + 2 == st.c2);
   assert(st.c1 + 2 == *p);
   assert(*p == st.c2);

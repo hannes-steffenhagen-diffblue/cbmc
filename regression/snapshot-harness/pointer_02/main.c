@@ -20,13 +20,13 @@ void checkpoint()
 
 int main()
 {
-  //initialize();
-  //checkpoint();
+  initialize();
+  checkpoint();
 
   assert(*p2 == x);
   assert(p1 != p2);
   assert(p1 != p3);
-  assert(*p1 != x);
+  assert(*p1 == x);
   *p1 = x;
   assert(*p1 == x);
 }

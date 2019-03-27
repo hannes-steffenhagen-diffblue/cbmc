@@ -23,6 +23,7 @@ DIRS = cbmc \
        goto-cc-cbmc \
        cbmc-cpp \
        goto-cc-goto-analyzer \
+       snapshot-harness \
        systemc \
        contracts \
        # Empty last line

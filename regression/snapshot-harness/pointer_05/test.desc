@@ -1,6 +1,6 @@
 CORE
 main.c
---harness-type initialise-with-memory-snapshot --memory-snapshot pointer_05.json --initial-location main:0
+x,p1,p2 --harness-type initialise-with-memory-snapshot --initial-location main:4
 ^EXIT=0$
 ^SIGNAL=0$
 \[main.assertion.1\] line [0-9]+ assertion \*p1 == \*p2: SUCCESS
