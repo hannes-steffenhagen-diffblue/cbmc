@@ -35,10 +35,13 @@ Author: Malte Mues <mail.mues@gmail.com>
 #include <util/expr_initializer.h>
 #include <util/irep.h>
 #include <util/mp_arith.h>
+#include <util/pointer_offset_size.h>
 #include <util/std_code.h>
 #include <util/std_expr.h>
 #include <util/std_types.h>
 #include <util/string_constant.h>
+#include <util/string_utils.h>
+#include <util/string2int.h>
 
 symbol_analyzert::symbol_analyzert(
   const symbol_tablet &symbol_table,
@@ -191,6 +194,34 @@ exprt symbol_analyzert::get_char_pointer_value(
   }
 }
 
+exprt symbol_analyzert::get_pointer_to_member_value(
+  const exprt &expr,
+  const pointer_valuet &pointer_value,
+  const source_locationt &location)
+{
+  PRECONDITION(expr.type().id() == ID_pointer);
+  PRECONDITION(!is_c_char(expr.type().subtype()));
+  std::string memory_location = pointer_value.address;
+  PRECONDITION(memory_location != "0x0");
+  PRECONDITION(!pointer_value.pointee.empty());
+
+  std::string struct_name;
+  std::string member_offset_string;
+  split_string(
+    pointer_value.pointee, '+', struct_name, member_offset_string, true);
+  size_t member_offset = safe_string2size_t(member_offset_string);
+
+  const symbolt *struct_symbol = symbol_table.lookup(struct_name);
+  DATA_INVARIANT(struct_symbol != nullptr, "unknown struct");
+
+  const auto maybe_member_expr = get_subexpression_at_offset(
+    struct_symbol->symbol_expr(), member_offset, expr.type().subtype(), ns);
+  if(maybe_member_expr.has_value())
+    return *maybe_member_expr;
+
+  UNREACHABLE;
+}
+
 exprt symbol_analyzert::get_non_char_pointer_value(
   const exprt &expr,
   const std::string memory_location,
@@ -262,7 +293,9 @@ exprt symbol_analyzert::get_pointer_value(
     else
     {
       const exprt target_expr =
-        get_non_char_pointer_value(expr, memory_location, location);
+        (value.pointee.find("+") == std::string::npos)
+          ? get_non_char_pointer_value(expr, memory_location, location)
+          : get_pointer_to_member_value(expr, value, location);
 
       if(target_expr.id() == ID_nil)
       {

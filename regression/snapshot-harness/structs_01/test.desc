@@ -1,4 +1,4 @@
-KNOWNBUG
+CORE
 main.c
 st,p --harness-type initialise-with-memory-snapshot --initial-location main:4
 ^EXIT=0$
