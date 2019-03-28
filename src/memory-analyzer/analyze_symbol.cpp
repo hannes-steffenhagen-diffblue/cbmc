@@ -206,10 +206,19 @@ exprt symbol_analyzert::get_pointer_to_member_value(
   PRECONDITION(!pointer_value.pointee.empty());
 
   std::string struct_name;
-  std::string member_offset_string;
-  split_string(
-    pointer_value.pointee, '+', struct_name, member_offset_string, true);
-  size_t member_offset = safe_string2size_t(member_offset_string);
+  size_t member_offset;
+  if(pointer_value.pointee.find("+") != std::string::npos)
+  {
+    std::string member_offset_string;
+    split_string(
+      pointer_value.pointee, '+', struct_name, member_offset_string, true);
+    member_offset = safe_string2size_t(member_offset_string);
+  }
+  else
+  {
+    struct_name = pointer_value.pointee;
+    member_offset = 0;
+  }
 
   const symbolt *struct_symbol = symbol_table.lookup(struct_name);
   DATA_INVARIANT(struct_symbol != nullptr, "unknown struct");
@@ -269,6 +278,24 @@ exprt symbol_analyzert::get_non_char_pointer_value(
   }
 }
 
+bool symbol_analyzert::points_to_member(
+  const pointer_valuet &pointer_value) const
+{
+  if(pointer_value.pointee.find("+") != std::string::npos)
+    return true;
+
+  const symbolt *pointee_symbol = symbol_table.lookup(pointer_value.pointee);
+  if(pointee_symbol == nullptr)
+    return false;
+  const auto pointee_type = pointee_symbol->type;
+  if(
+    pointee_type.id() == ID_struct_tag || pointee_type.id() == ID_union_tag ||
+    pointee_type.id() == ID_array || pointee_type.id() == ID_struct ||
+    pointee_type.id() == ID_union)
+    return true;
+  return false;
+}
+
 exprt symbol_analyzert::get_pointer_value(
   const exprt &expr,
   const exprt &zero_expr,
@@ -293,9 +320,9 @@ exprt symbol_analyzert::get_pointer_value(
     else
     {
       const exprt target_expr =
-        (value.pointee.find("+") == std::string::npos)
-          ? get_non_char_pointer_value(expr, memory_location, location)
-          : get_pointer_to_member_value(expr, value, location);
+        points_to_member(value)
+          ? get_pointer_to_member_value(expr, value, location)
+          : get_non_char_pointer_value(expr, memory_location, location);
 
       if(target_expr.id() == ID_nil)
       {
@@ -395,6 +422,10 @@ exprt symbol_analyzert::get_expr_value(
 
     return get_pointer_value(expr, zero_expr, location);
   }
+  else if(type.id() == ID_union_tag)
+  {
+    return get_union_value(expr, zero_expr, location);
+  }
   else
   {
     throw analysis_exceptiont("unexpected expression:\n" + expr.pretty());
@@ -421,6 +452,39 @@ exprt symbol_analyzert::get_struct_value(
   for(size_t i = 0; i < new_expr.operands().size(); ++i)
   {
     const struct_typet::componentt &component = struct_type.components()[i];
+
+    if(component.get_is_padding())
+    {
+      continue;
+    }
+
+    exprt &operand = new_expr.operands()[i];
+    member_exprt member_expr(expr, component);
+
+    operand = get_expr_value(member_expr, operand, location);
+  }
+
+  return new_expr;
+}
+
+exprt symbol_analyzert::get_union_value(
+  const exprt &expr,
+  const exprt &zero_expr,
+  const source_locationt &location)
+{
+  PRECONDITION(zero_expr.id() == ID_union);
+
+  PRECONDITION(expr.type().id() == ID_union_tag);
+  PRECONDITION(expr.type() == zero_expr.type());
+
+  exprt new_expr(zero_expr);
+
+  const union_tag_typet &union_tag_type = to_union_tag_type(expr.type());
+  const union_typet union_type = ns.follow_tag(union_tag_type);
+
+  for(size_t i = 0; i < new_expr.operands().size(); ++i)
+  {
+    const union_typet::componentt &component = union_type.components()[i];
 
     if(component.get_is_padding())
     {

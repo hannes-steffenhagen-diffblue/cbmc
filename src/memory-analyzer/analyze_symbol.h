@@ -133,6 +133,16 @@ private:
     const exprt &zero_expr,
     const source_locationt &location);
 
+  /// For each of the members of the struct: call \ref get_expr_value
+  /// \param expr: struct expression to be analysed
+  /// \param zero_expr: struct with zero-initialised members
+  /// \param location: the source location
+  /// \return the value of the struct from \ref gdb_apit
+  exprt get_union_value(
+    const exprt &expr,
+    const exprt &zero_expr,
+    const source_locationt &location);
+
   /// Call \ref gdb_apit::get_memory on \p expr then split based on the
   ///   points-to type being `char` type or not. These have dedicated functions.
   /// \param expr: the input pointer expression
@@ -186,6 +196,12 @@ private:
 
   /// Call \ref add_assignment for each pair in \ref outstanding_assignments
   void process_outstanding_assignments();
+
+  /// Analyzes the \p pointer_value to decide if it point to a struct or a
+  ///   union (or array)
+  /// \param pointer_value: pointer value to be analyzed
+  /// \return true if pointing to a member
+  bool points_to_member(const pointer_valuet &pointer_value) const;
 };
 
 #endif // CPROVER_MEMORY_ANALYZER_ANALYZE_SYMBOL_H
