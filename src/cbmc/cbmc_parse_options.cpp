@@ -830,7 +830,9 @@ bool cbmc_parse_optionst::process_goto_program(
   link_to_library(
     goto_model, log.get_message_handler(), cprover_c_library_factory);
 
-  if(options.get_bool_option("string-abstraction"))
+  if(
+    options.get_bool_option("string-abstraction") ||
+    options.get_bool_option("refine-strings"))
     string_instrumentation(goto_model, log.get_message_handler());
 
   // remove function pointers

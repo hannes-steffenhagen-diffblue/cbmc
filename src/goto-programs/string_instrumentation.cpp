@@ -17,7 +17,10 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <util/c_types.h>
 #include <util/config.h>
 #include <util/invariant.h>
+#include <util/mathematical_expr.h>
+#include <util/mathematical_types.h>
 #include <util/message.h>
+#include <util/refined_string_type.h>
 #include <util/std_code.h>
 #include <util/std_expr.h>
 #include <util/string_constant.h>
@@ -625,11 +628,50 @@ void string_instrumentationt::do_strchr(
 
   goto_programt tmp;
 
-  goto_programt::targett assertion = tmp.add(goto_programt::make_assertion(
-    is_zero_string(arguments[0]), target->source_location));
-  assertion->source_location.set_property_class("string");
-  assertion->source_location.set_comment(
-    "zero-termination of string argument of strchr");
+  auto new_aux_symbol =
+    [](
+      const irep_idt &name,
+      const typet &type,
+      symbol_table_baset &symbol_table) -> auxiliary_symbolt {
+    auxiliary_symbolt new_symbol;
+    new_symbol.base_name = name;
+    new_symbol.pretty_name = name;
+    new_symbol.is_static_lifetime = false;
+    new_symbol.is_state_var = false;
+    new_symbol.mode = ID_C;
+    new_symbol.name = name;
+    new_symbol.type = type;
+    symbol_table.add(new_symbol);
+
+    return new_symbol;
+  };
+
+  const auto length_symbol =
+    new_aux_symbol("strchr_arg_length", size_type(), symbol_table);
+
+  std::vector<typet> argument_types;
+  for(const auto &arg : arguments)
+    argument_types.push_back(arg.type());
+
+  const auto func_symbol = new_aux_symbol(
+    ID_cprover_string_index_of_func,
+    mathematical_function_typet(std::move(argument_types), size_type()),
+    symbol_table);
+
+  const auto &string_arg = arguments.at(0);
+  const auto refined_string_type =
+    refined_string_typet{size_type(), to_pointer_type(string_arg.type())};
+
+  exprt::operandst refined_arguments;
+  refined_arguments.push_back(struct_exprt{
+    {length_symbol.symbol_expr(), string_arg}, refined_string_type});
+  refined_arguments.push_back(arguments.at(1));
+
+  const auto apply_index_of = function_application_exprt(
+    func_symbol.symbol_expr(), refined_arguments, size_type());
+
+  tmp.add(goto_programt::make_assignment(
+    target->get_function_call().lhs(), plus_exprt{string_arg, apply_index_of}));
 
   target->turn_into_skip();
   dest.insert_before_swap(target, tmp);
