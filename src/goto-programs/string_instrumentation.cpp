@@ -24,6 +24,7 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <util/std_code.h>
 #include <util/std_expr.h>
 #include <util/string_constant.h>
+#include <util/string_expr.h>
 #include <util/symbol_table.h>
 
 #include <goto-programs/format_strings.h>
@@ -100,6 +101,10 @@ protected:
     goto_programt &dest,
     goto_programt::targett it,
     const code_function_callt &);
+  void do_strchr2(goto_functiont &strchr_function);
+  refined_string_exprt char_ptr_to_refined_string(
+    const exprt &char_ptr,
+    goto_programt &program) const;
   void do_strchr(
     goto_programt &dest,
     goto_programt::targett it,
@@ -192,6 +197,10 @@ void string_instrumentationt::operator()(goto_functionst &dest)
       it!=dest.function_map.end();
       it++)
   {
+    if(it->first == "strchr")
+    {
+      do_strchr2(it->second);
+    }
     (*this)(it->second.body);
   }
 }
@@ -231,16 +240,16 @@ void string_instrumentationt::do_function_call(
     else if(identifier=="strxfrm")
     {
     }
-    else if(identifier=="strchr")
-      do_strchr(dest, target, call);
+    //    else if(identifier=="strchr")
+    //      do_strchr(dest, target, call);
     else if(identifier=="strcspn")
     {
     }
     else if(identifier=="strpbrk")
     {
     }
-    else if(identifier=="strrchr")
-      do_strrchr(dest, target, call);
+    // else if(identifier=="strrchr")
+    //   do_strrchr(dest, target, call);
     else if(identifier=="strspn")
     {
     }
@@ -611,6 +620,216 @@ void string_instrumentationt::do_strncmp(
   goto_programt::targett,
   const code_function_callt &)
 {
+}
+
+refined_string_exprt string_instrumentationt::char_ptr_to_refined_string(
+  const exprt &char_ptr,
+  goto_programt &program) const
+{
+  auto new_aux_symbol =
+    [](
+      const irep_idt &name,
+      const typet &type,
+      symbol_table_baset &symbol_table) -> auxiliary_symbolt {
+    auxiliary_symbolt new_symbol;
+    new_symbol.base_name = name;
+    new_symbol.pretty_name = name;
+    new_symbol.is_static_lifetime = false;
+    new_symbol.is_state_var = false;
+    new_symbol.mode = ID_C;
+    new_symbol.name = name;
+    new_symbol.type = type;
+    symbol_table.add(new_symbol);
+
+    return new_symbol;
+  };
+
+  const auto length_symbol = new_aux_symbol(
+    "cprover_string_index_of_func::string_length", index_type(), symbol_table);
+  const auto length_field = length_symbol.symbol_expr();
+  const auto content_symbol = new_aux_symbol(
+    "cprover_string_index_of_func::string_content",
+    char_ptr.type(),
+    symbol_table);
+  const auto content_field = content_symbol.symbol_expr();
+  const auto array_type = to_pointer_type(char_ptr.type());
+
+  program.add(goto_programt::make_decl(length_symbol.symbol_expr()));
+  program.add(goto_programt::make_decl(content_symbol.symbol_expr()));
+
+  const auto refined_string_type =
+    refined_string_typet{index_type(), array_type};
+
+  const auto refined_string_expr =
+    refined_string_exprt{length_field, content_field, refined_string_type};
+
+  program.add(goto_programt::make_assignment(
+    refined_string_expr.length(),
+    side_effect_expr_nondett{length_symbol.type}));
+  program.add(
+    goto_programt::make_assignment(refined_string_expr.content(), char_ptr));
+
+  //TODO : read max-nondet-string-length from options
+  program.add(goto_programt::make_assumption(binary_relation_exprt{
+    refined_string_expr.length(), ID_le, from_integer(10, index_type())}));
+
+  //  const exprt &array = char_ptr; //TODO : maybe
+  //----------
+  const array_typet nondet_array_type{char_type(),
+                                      infinity_exprt(index_type())};
+  const symbolt data_sym = new_aux_symbol(
+    "nondet_infinite_array_pointer",
+    pointer_type(nondet_array_type),
+    symbol_table);
+  const symbol_exprt data_pointer = data_sym.symbol_expr();
+  program.add(goto_programt::make_decl(data_pointer));
+  dereference_exprt nondet_array_expr{data_pointer};
+  //----------
+  const address_of_exprt array_pointer(
+    index_exprt(nondet_array_expr, from_integer(0, index_type())));
+  program.add(goto_programt::make_assignment(
+    array_pointer, refined_string_expr.content()));
+
+  const symbolt return_sym_length =
+    new_aux_symbol("return_array_length", index_type(), symbol_table);
+  const auto return_length_expr = return_sym_length.symbol_expr();
+  program.add(goto_programt::make_decl(return_length_expr));
+
+  const std::vector<typet> associate_length_to_array_argument_types = {
+    nondet_array_expr.type(), length_symbol.type};
+
+  const auto apply_associate_length_to_array = function_application_exprt{
+    symbol_exprt{ID_cprover_associate_length_to_array_func,
+                 mathematical_function_typet{
+                   std::move(associate_length_to_array_argument_types),
+                   return_sym_length.type}},
+    {nondet_array_expr, refined_string_expr.length()},
+    index_type()};
+
+  program.add(goto_programt::make_assignment(
+    return_length_expr, apply_associate_length_to_array));
+
+  const symbolt return_sym_pointer =
+    new_aux_symbol("return_array_pointer", index_type(), symbol_table);
+  const auto return_pointer_expr = return_sym_pointer.symbol_expr();
+  program.add(goto_programt::make_decl(return_pointer_expr));
+
+  const std::vector<typet> associate_pointer_to_array_argument_types = {
+    nondet_array_expr.type(), array_pointer.type()};
+
+  const auto apply_associate_pointer_to_array = function_application_exprt{
+    symbol_exprt{ID_cprover_associate_array_to_pointer_func,
+                 mathematical_function_typet{
+                   std::move(associate_pointer_to_array_argument_types),
+                   return_sym_pointer.type}},
+    {nondet_array_expr, array_pointer},
+    index_type()};
+
+  program.add(goto_programt::make_assignment(
+    return_pointer_expr, apply_associate_pointer_to_array));
+
+  // program.add(goto_programt::make_assignment(
+  //   refined_string_expr.content(), array_pointer));
+
+  return refined_string_exprt{refined_string_expr.length(),
+                              //      array_pointer};
+                              refined_string_expr.content()};
+}
+
+void string_instrumentationt::do_strchr2(goto_functiont &strchr_function)
+{
+  const auto &params = to_code_type(strchr_function.type).parameters();
+  const auto &str_param = params.at(0);
+  const auto &ch_param = params.at(1);
+
+  goto_programt new_body;
+
+  auto new_aux_symbol =
+    [](
+      const irep_idt &name,
+      const typet &type,
+      symbol_table_baset &symbol_table) -> auxiliary_symbolt {
+    auxiliary_symbolt new_symbol;
+    new_symbol.base_name = name;
+    new_symbol.pretty_name = name;
+    new_symbol.is_static_lifetime = false;
+    new_symbol.is_state_var = false;
+    new_symbol.mode = ID_C;
+    new_symbol.name = name;
+    new_symbol.type = type;
+    symbol_table.add(new_symbol);
+
+    return new_symbol;
+  };
+
+  std::vector<typet> argument_types;
+  for(const auto &arg : params)
+    argument_types.push_back(arg.type());
+
+  // const auto func_symbol = new_aux_symbol(
+  //   ID_cprover_string_index_of_func,
+  //   mathematical_function_typet(std::move(argument_types), size_type()),
+  //   symbol_table);
+
+  const auto refined_string_type =
+    refined_string_typet{index_type(), to_pointer_type(str_param.type())};
+
+  const auto str_param_symbol =
+    symbol_exprt{str_param.get_identifier(), str_param.type()};
+  const auto ch_param_symbol =
+    symbol_exprt{ch_param.get_identifier(), ch_param.type()};
+
+  exprt::operandst refined_arguments;
+  refined_arguments.push_back(
+    char_ptr_to_refined_string(str_param_symbol, new_body));
+  // struct_exprt{
+  //   {
+  //     from_integer(4,signed_int_type()),
+  //       str_param_symbol}, refined_string_type});
+  refined_arguments.push_back(ch_param_symbol);
+
+  const auto apply_index_of = function_application_exprt(
+    symbol_exprt{
+      ID_cprover_string_index_of_func,
+      mathematical_function_typet(std::move(argument_types), index_type())},
+    refined_arguments,
+    index_type());
+
+  const auto maybe_return =
+    new_aux_symbol("maybe_return", index_type(), symbol_table);
+
+  new_body.add(goto_programt::make_assignment(
+    code_assignt{maybe_return.symbol_expr(), apply_index_of}));
+
+  auto found_case = new_body.add(goto_programt::make_return(code_returnt{
+    plus_exprt{str_param_symbol,
+               typecast_exprt{maybe_return.symbol_expr(), size_type()}}}));
+
+  auto jump_to_found_case = new_body.insert_before(
+    found_case,
+    goto_programt::make_goto(
+      found_case,
+      binary_relation_exprt{
+        maybe_return.symbol_expr(), ID_ge, from_integer(0, index_type())}));
+
+  auto return_null = new_body.insert_after(
+    jump_to_found_case,
+    goto_programt::make_return(
+      code_returnt{null_pointer_exprt{to_pointer_type(str_param.type())}}));
+
+  auto end_function = new_body.add(goto_programt::make_end_function());
+  new_body.insert_after(
+    return_null, goto_programt::make_goto(end_function, true_exprt{}));
+
+  // new_body.add(goto_programt::make_return(code_returnt{
+  //   plus_exprt{str_param_symbol,
+  //              typecast_exprt{maybe_return.symbol_expr(), size_type()}}}));
+
+  // new_body.add(goto_programt::make_return(code_returnt{
+  //    plus_exprt{str_param_symbol,
+  //        from_integer(0, signed_int_type())}}));
+
+  strchr_function.body = std::move(new_body);
 }
 
 void string_instrumentationt::do_strchr(

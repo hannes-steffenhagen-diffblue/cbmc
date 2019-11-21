@@ -1201,7 +1201,9 @@ static optionalt<exprt> substitute_array_access(
   symbol_generatort &symbol_generator,
   const bool left_propagate)
 {
-  const exprt &array = index_expr.array();
+  exprt array = index_expr.array();
+  if(array.id() == ID_byte_extract_little_endian)
+    array = array.op0();
   if(auto array_of = expr_try_dynamic_cast<array_of_exprt>(array))
     return array_of->op();
   if(auto array_with = expr_try_dynamic_cast<with_exprt>(array))
