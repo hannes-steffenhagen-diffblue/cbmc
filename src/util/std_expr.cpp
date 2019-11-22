@@ -341,11 +341,11 @@ const irep_idt &string_constant_exprt::get_value() const
   return get(ID_value);
 }
 
-array_exprt string_constant_exprt::as_array_expr()
+array_exprt string_constant_exprt::as_array_expr() const
 {
   auto const &value = id2string(get_value());
   auto result = array_exprt{array_typet{
-    char_type(), from_integer(value.size() + 1, size_type())}};
+    char_type(), from_integer(value.size() + 1, index_type())}};
   result.operands().reserve(value.size() + 1);
   for(auto const &c : value) {
     result.operands().push_back(from_integer(c, char_type()));

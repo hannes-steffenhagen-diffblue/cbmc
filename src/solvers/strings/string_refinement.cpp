@@ -1652,7 +1652,8 @@ static void initial_index_set(
     if(it->id() == ID_index && is_char_type(it->type()))
     {
       const auto &index_expr = to_index_expr(*it);
-      const auto &s = maybe_byte_extract_array(index_expr.array());
+      const auto &s =
+        massage_weird_arrays_into_non_weird_arrays(index_expr.array());
       initial_index_set(index_set, ns, qvar, bound, s, index_expr.index());
       it.next_sibling_or_parent();
     }
@@ -1846,8 +1847,10 @@ exprt string_refinementt::get(const exprt &expr) const
       else
         UNREACHABLE;
     }
-    auto array = maybe_byte_extract_array(supert::get(current.get()));
-
+    const exprt &super_duper_get = supert::get(current.get());
+    std::cout << "*** " << __FUNCTION__ << "::super_duper_get\n" << super_duper_get.pretty() << '\n';
+    auto array = massage_weird_arrays_into_non_weird_arrays(super_duper_get);
+    std::cout << "*** " << __FUNCTION__ << "::array\n" << array.pretty() << '\n';
     const auto index = get(index_expr->index());
 
     // If the underlying solver does not know about the existence of an array,

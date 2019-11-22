@@ -71,7 +71,7 @@ exprt string_constraint_generatort::associate_array_to_pointer(
   array_string_exprt array_expr = to_array_string_expr(
     f.arguments()[0].id() == ID_index
       ? to_index_expr(f.arguments()[0]).array()
-      : maybe_byte_extract_array(f.arguments()[0]));
+      : massage_weird_arrays_into_non_weird_arrays(f.arguments()[0]));
 
   const exprt &pointer_expr = f.arguments()[1];
   array_pool.insert(simplify_expr(pointer_expr, ns), array_expr);

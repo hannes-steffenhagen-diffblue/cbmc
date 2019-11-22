@@ -4120,7 +4120,7 @@ public:
 
   const irep_idt &get_value() const;
 
-  array_exprt as_array_expr();
+  array_exprt as_array_expr() const;
 };
 
 template<>

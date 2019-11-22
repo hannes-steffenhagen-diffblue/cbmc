@@ -13,6 +13,7 @@ Author: Romain Brenguier, romain.brenguier@diffblue.com
 
 #include "string_constraint_generator.h"
 #include "string_refinement_invariant.h"
+#include <iostream>
 
 /// Add axioms stating that the returned value is the index within `haystack`
 /// (`str`) of the first occurrence of `needle` (`c`) starting the search at
@@ -308,6 +309,8 @@ string_constraint_generatort::add_axioms_for_index_of(
   const exprt &c = args[1];
   const typet &index_type = str.length_type();
   const typet &char_type = str.content().type().subtype();
+  std::cout << "*** f.type()\n" << f.type().pretty() << '\n'
+            << "*** index_type\n" << index_type.pretty() << '\n';
   PRECONDITION(f.type() == index_type);
   const exprt from_index =
     args.size() == 2 ? from_integer(0, index_type) : args[2];

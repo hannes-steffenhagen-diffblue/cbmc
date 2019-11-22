@@ -199,7 +199,7 @@ array_exprt interval_sparse_arrayt::concretize(
   return array;
 }
 
-exprt maybe_byte_extract_array(const exprt &expr)
+exprt maybe_byte_extract_exprt(const exprt &expr)
 {
   if(!can_cast_expr<byte_extract_exprt>(expr))
     return expr;
@@ -210,7 +210,29 @@ exprt maybe_byte_extract_array(const exprt &expr)
   const auto &constant_offset = to_constant_expr(offset);
   PRECONDITION(id2string(constant_offset.get_value()) == "0");
   const auto &op = byte_extract_expr.op();
-  PRECONDITION(can_cast_expr<array_exprt>(op));
-
   return op;
+}
+
+exprt maybe_remove_string_exprs(const exprt &expr)
+{
+  return [&]() {
+    if(
+      auto const &maybe_string_constant =
+        expr_try_dynamic_cast<string_constant_exprt>(expr))
+    {
+      return static_cast<const exprt &>(maybe_string_constant->as_array_expr());
+    }
+    else
+    {
+      return expr;
+    }
+  }();
+}
+
+exprt massage_weird_arrays_into_non_weird_arrays(const exprt &expr)
+{
+  auto const byte_extracted = maybe_byte_extract_exprt(expr);
+  auto const string_removed = maybe_remove_string_exprs(byte_extracted);
+  PRECONDITION(can_cast_expr<array_exprt>(string_removed));
+  return string_removed;
 }

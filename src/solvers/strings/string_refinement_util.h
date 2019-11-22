@@ -140,6 +140,6 @@ public:
   }
 };
 
-exprt maybe_byte_extract_array(const exprt &expr);
+exprt massage_weird_arrays_into_non_weird_arrays(const exprt &expr);
 
 #endif // CPROVER_SOLVERS_REFINEMENT_STRING_REFINEMENT_UTIL_H
