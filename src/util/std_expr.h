@@ -4114,6 +4114,21 @@ public:
   bool value_is_zero_string() const;
 };
 
+class string_constant_exprt : public expr_protectedt {
+public:
+  string_constant_exprt(irep_idt value, typet type);
+
+  const irep_idt &get_value() const;
+
+  array_exprt as_array_expr();
+};
+
+template<>
+inline bool can_cast_expr<string_constant_exprt>(const exprt &base)
+{
+  return base.id() == ID_string_constant;
+}
+
 template <>
 inline bool can_cast_expr<constant_exprt>(const exprt &base)
 {

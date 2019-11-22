@@ -22,15 +22,15 @@ Author: Daniel Kroening, kroening@kroening.com
 
 bool constant_exprt::value_is_zero_string() const
 {
-  const std::string val=id2string(get_value());
-  return val.find_first_not_of('0')==std::string::npos;
+  const std::string val = id2string(get_value());
+  return val.find_first_not_of('0') == std::string::npos;
 }
 
 exprt disjunction(const exprt::operandst &op)
 {
   if(op.empty())
     return false_exprt();
-  else if(op.size()==1)
+  else if(op.size() == 1)
     return op.front();
   else
   {
@@ -40,7 +40,7 @@ exprt disjunction(const exprt::operandst &op)
 
 void dynamic_object_exprt::set_instance(unsigned int instance)
 {
-  op0()=from_integer(instance, typet(ID_natural));
+  op0() = from_integer(instance, typet(ID_natural));
 }
 
 unsigned int dynamic_object_exprt::get_instance() const
@@ -52,7 +52,7 @@ exprt conjunction(const exprt::operandst &op)
 {
   if(op.empty())
     return true_exprt();
-  else if(op.size()==1)
+  else if(op.size() == 1)
     return op.front();
   else
   {
@@ -66,9 +66,9 @@ static void build_object_descriptor_rec(
   const exprt &expr,
   object_descriptor_exprt &dest)
 {
-  if(expr.id()==ID_index)
+  if(expr.id() == ID_index)
   {
-    const index_exprt &index=to_index_expr(expr);
+    const index_exprt &index = to_index_expr(expr);
 
     build_object_descriptor_rec(ns, index.array(), dest);
 
@@ -81,10 +81,10 @@ static void build_object_descriptor_rec(
         typecast_exprt::conditional_cast(index.index(), index_type()),
         typecast_exprt::conditional_cast(sub_size.value(), index_type())));
   }
-  else if(expr.id()==ID_member)
+  else if(expr.id() == ID_member)
   {
-    const member_exprt &member=to_member_expr(expr);
-    const exprt &struct_op=member.struct_op();
+    const member_exprt &member = to_member_expr(expr);
+    const exprt &struct_op = member.struct_op();
 
     build_object_descriptor_rec(ns, struct_op, dest);
 
@@ -95,12 +95,13 @@ static void build_object_descriptor_rec(
       dest.offset(),
       typecast_exprt::conditional_cast(offset.value(), index_type()));
   }
-  else if(expr.id()==ID_byte_extract_little_endian ||
-          expr.id()==ID_byte_extract_big_endian)
+  else if(
+    expr.id() == ID_byte_extract_little_endian ||
+    expr.id() == ID_byte_extract_big_endian)
   {
-    const byte_extract_exprt &be=to_byte_extract_expr(expr);
+    const byte_extract_exprt &be = to_byte_extract_expr(expr);
 
-    dest.object()=be.op();
+    dest.object() = be.op();
 
     build_object_descriptor_rec(ns, be.op(), dest);
 
@@ -109,11 +110,11 @@ static void build_object_descriptor_rec(
       typecast_exprt::conditional_cast(
         to_byte_extract_expr(expr).offset(), index_type()));
   }
-  else if(expr.id()==ID_typecast)
+  else if(expr.id() == ID_typecast)
   {
-    const typecast_exprt &tc=to_typecast_expr(expr);
+    const typecast_exprt &tc = to_typecast_expr(expr);
 
-    dest.object()=tc.op();
+    dest.object() = tc.op();
 
     build_object_descriptor_rec(ns, tc.op(), dest);
   }
@@ -138,15 +139,13 @@ static void build_object_descriptor_rec(
 }
 
 /// Build an object_descriptor_exprt from a given expr
-void object_descriptor_exprt::build(
-  const exprt &expr,
-  const namespacet &ns)
+void object_descriptor_exprt::build(const exprt &expr, const namespacet &ns)
 {
   PRECONDITION(object().id() == ID_unknown);
-  object()=expr;
+  object() = expr;
 
-  if(offset().id()==ID_unknown)
-    offset()=from_integer(0, index_type());
+  if(offset().id() == ID_unknown)
+    offset() = from_integer(0, index_type());
 
   build_object_descriptor_rec(ns, expr, *this);
   simplify(offset(), ns);
@@ -182,8 +181,8 @@ extractbits_exprt::extractbits_exprt(
     from_integer(_lower, integer_typet()));
 }
 
-address_of_exprt::address_of_exprt(const exprt &_op):
-  unary_exprt(ID_address_of, _op, pointer_type(_op.type()))
+address_of_exprt::address_of_exprt(const exprt &_op)
+  : unary_exprt(ID_address_of, _op, pointer_type(_op.type()))
 {
 }
 
@@ -329,4 +328,28 @@ void let_exprt::validate(const exprt &expr, const validation_modet vm)
       binding.first.type() == binding.second.type(),
       "let bindings must be type consistent");
   }
+}
+
+string_constant_exprt::string_constant_exprt(irep_idt value, typet type)
+  : expr_protectedt{ID_string_constant, std::move(type)}
+{
+  set(ID_value, value);
+}
+
+const irep_idt &string_constant_exprt::get_value() const
+{
+  return get(ID_value);
+}
+
+array_exprt string_constant_exprt::as_array_expr()
+{
+  auto const &value = id2string(get_value());
+  auto result = array_exprt{array_typet{
+    char_type(), from_integer(value.size() + 1, size_type())}};
+  result.operands().reserve(value.size() + 1);
+  for(auto const &c : value) {
+    result.operands().push_back(from_integer(c, char_type()));
+  }
+  result.operands().push_back(from_integer(0, char_type()));
+  return result;
 }

@@ -20,6 +20,7 @@ Author: Alberto Griggio, alberto.griggio@gmail.com
 #include "string_refinement.h"
 
 #include <iomanip>
+#include <iostream>
 #include <numeric>
 #include <solvers/sat/satcheck.h>
 #include <stack>
@@ -1202,8 +1203,16 @@ static optionalt<exprt> substitute_array_access(
   const bool left_propagate)
 {
   exprt array = index_expr.array();
+  std::cout << "********************************************\n";
+  std::cout << "array_id: " << array.id() << '\n';
+  std::cout << index_expr.pretty() << '\n';
+  std::cout << "********************************************\n";
   if(array.id() == ID_byte_extract_little_endian)
     array = array.op0();
+  if(auto string_literal = expr_try_dynamic_cast<string_constant_exprt>(array))
+  {
+    array = string_literal->as_array_expr();
+  }
   if(auto array_of = expr_try_dynamic_cast<array_of_exprt>(array))
     return array_of->op();
   if(auto array_with = expr_try_dynamic_cast<with_exprt>(array))
@@ -1215,7 +1224,6 @@ static optionalt<exprt> substitute_array_access(
   if(auto if_expr = expr_try_dynamic_cast<if_exprt>(array))
     return substitute_array_access(
       *if_expr, index_expr.index(), symbol_generator, left_propagate);
-
   INVARIANT(
     array.is_nil() || array.id() == ID_symbol || array.id() == ID_nondet_symbol,
     std::string(
