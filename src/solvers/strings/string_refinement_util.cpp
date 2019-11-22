@@ -25,8 +25,14 @@ Author: Diffblue Ltd.
 
 bool is_char_type(const typet &type)
 {
-  return type.id() == ID_unsignedbv && to_unsignedbv_type(type).get_width() <=
-                                         STRING_REFINEMENT_MAX_CHAR_WIDTH;
+  if(type.id() == ID_unsignedbv)
+    return to_unsignedbv_type(type).get_width() <=
+           STRING_REFINEMENT_MAX_CHAR_WIDTH;
+
+  if(type.id() == ID_signedbv)
+    return to_signedbv_type(type).get_width() <= 8;
+
+  return false;
 }
 
 bool is_char_array_type(const typet &type, const namespacet &ns)
@@ -191,4 +197,20 @@ array_exprt interval_sparse_arrayt::concretize(
   array.operands().resize(
     size, it == entries.end() ? default_value : it->second);
   return array;
+}
+
+exprt maybe_byte_extract_array(const exprt &expr)
+{
+  if(!can_cast_expr<byte_extract_exprt>(expr))
+    return expr;
+
+  const auto &byte_extract_expr = to_byte_extract_expr(expr);
+  const auto &offset = byte_extract_expr.offset();
+  PRECONDITION(offset.id() == ID_constant);
+  const auto &constant_offset = to_constant_expr(offset);
+  PRECONDITION(id2string(constant_offset.get_value()) == "0");
+  const auto &op = byte_extract_expr.op();
+  PRECONDITION(can_cast_expr<array_exprt>(op));
+
+  return op;
 }

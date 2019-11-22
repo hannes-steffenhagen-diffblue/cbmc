@@ -140,4 +140,6 @@ public:
   }
 };
 
+exprt maybe_byte_extract_array(const exprt &expr);
+
 #endif // CPROVER_SOLVERS_REFINEMENT_STRING_REFINEMENT_UTIL_H
