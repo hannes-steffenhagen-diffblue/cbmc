@@ -1067,7 +1067,7 @@ static exprt get_char_array_and_concretize(
   const namespacet &ns,
   messaget::mstreamt &stream,
   const array_string_exprt &arr,
-  array_poolt &array_pool)
+  const array_poolt &array_pool)
 {
   stream << "- " << format(arr) << ":\n";
   stream << std::string(4, ' ') << "- type: " << format(arr.type())
@@ -1116,12 +1116,13 @@ void debug_model(
   const namespacet &ns,
   const std::function<exprt(const exprt &)> &super_get,
   const std::vector<symbol_exprt> &symbols,
-  array_poolt &array_pool)
+  const array_poolt &array_pool)
 {
   stream << "debug_model:" << '\n';
   for(const auto &pointer_array : generator.array_pool.get_arrays_of_pointers())
   {
     const auto arr = pointer_array.second;
+    INVARIANT(arr.id() == ID_array, "Pointer associated with a non-array");
     const exprt model =
       get_char_array_and_concretize(super_get, ns, stream, arr, array_pool);
 
@@ -1651,7 +1652,7 @@ static void initial_index_set(
     if(it->id() == ID_index && is_char_type(it->type()))
     {
       const auto &index_expr = to_index_expr(*it);
-      const auto &s = index_expr.array();
+      const auto &s = maybe_byte_extract_array(index_expr.array());
       initial_index_set(index_set, ns, qvar, bound, s, index_expr.index());
       it.next_sibling_or_parent();
     }
@@ -1845,7 +1846,8 @@ exprt string_refinementt::get(const exprt &expr) const
       else
         UNREACHABLE;
     }
-    const auto array = supert::get(current.get());
+    auto array = maybe_byte_extract_array(supert::get(current.get()));
+
     const auto index = get(index_expr->index());
 
     // If the underlying solver does not know about the existence of an array,
