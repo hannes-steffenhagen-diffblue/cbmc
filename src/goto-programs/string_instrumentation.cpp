@@ -790,7 +790,7 @@ void string_instrumentationt::do_strchr2(goto_functiont &strchr_function)
 
   const auto apply_index_of = function_application_exprt(
     symbol_exprt{
-      ID_cprover_string_index_of_func,
+      ID_cprover_string_c_index_of_func,
       mathematical_function_typet(std::move(argument_types), index_type())},
     refined_arguments,
     index_type());
@@ -873,7 +873,7 @@ void string_instrumentationt::do_strchr(
     argument_types.push_back(arg.type());
 
   const auto func_symbol = new_aux_symbol(
-    ID_cprover_string_index_of_func,
+    ID_cprover_string_c_index_of_func,
     mathematical_function_typet(std::move(argument_types), size_type()),
     symbol_table);
 

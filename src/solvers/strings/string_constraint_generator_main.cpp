@@ -217,6 +217,8 @@ string_constraint_generatort::add_axioms_for_function_application(
 
   if(id == ID_cprover_char_literal_func)
     return add_axioms_for_char_literal(expr);
+  if(id == ID_cprover_string_c_index_of_func)
+    return add_axioms_for_c_index_of(expr);
   else if(id == ID_cprover_string_length_func)
     return add_axioms_for_length(expr);
   else if(id == ID_cprover_string_equal_func)

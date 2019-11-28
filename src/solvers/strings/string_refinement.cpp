@@ -1204,10 +1204,6 @@ static optionalt<exprt> substitute_array_access(
   const bool left_propagate)
 {
   exprt array = index_expr.array();
-  std::cout << "********************************************\n";
-  std::cout << "array_id: " << array.id() << '\n';
-  std::cout << index_expr.pretty() << '\n';
-  std::cout << "********************************************\n";
   if(array.id() == ID_byte_extract_little_endian)
     array = array.op0();
   if(auto string_literal = expr_try_dynamic_cast<string_constant_exprt>(array))
@@ -1848,9 +1844,7 @@ exprt string_refinementt::get(const exprt &expr) const
         UNREACHABLE;
     }
     const exprt &super_duper_get = supert::get(current.get());
-    std::cout << "*** " << __FUNCTION__ << "::super_duper_get\n" << super_duper_get.pretty() << '\n';
     auto array = massage_weird_arrays_into_non_weird_arrays(super_duper_get);
-    std::cout << "*** " << __FUNCTION__ << "::array\n" << array.pretty() << '\n';
     const auto index = get(index_expr->index());
 
     // If the underlying solver does not know about the existence of an array,

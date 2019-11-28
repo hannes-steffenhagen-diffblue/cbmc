@@ -189,6 +189,10 @@ public:
   add_axioms_from_char(const function_application_exprt &f);
   std::pair<exprt, string_constraintst>
   add_axioms_from_char(const array_string_exprt &res, const exprt &c);
+  std::pair<exprt, string_constraintst> add_axioms_for_c_index_of(
+    const array_string_exprt &str,
+    const exprt &c,
+    const exprt &from_index);
   std::pair<exprt, string_constraintst> add_axioms_for_index_of(
     const array_string_exprt &str,
     const exprt &c,
@@ -302,6 +306,8 @@ public:
   std::pair<exprt, string_constraintst> combine_results(
     std::pair<exprt, string_constraintst> result1,
     std::pair<exprt, string_constraintst> result2);
+  std::pair<exprt, string_constraintst>
+  add_axioms_for_c_index_of(const function_application_exprt& exprt);
 };
 
 exprt length_constraint_for_concat_char(
