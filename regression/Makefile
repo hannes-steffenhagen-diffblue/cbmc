@@ -2,36 +2,35 @@
 # running tests in parallel, it is important that these directories are
 # listed with decreasing runtimes (i.e. longest running at the top)
 DIRS = cbmc \
+       cbmc-library \
+       goto-analyzer \
        ansi-c \
+       goto-instrument \
+       cpp \
        cbmc-concurrency \
        cbmc-cover \
-       cbmc-cpp \
        cbmc-incr-oneloop \
-       cbmc-library \
-       contracts \
-       cpp \
-       goto-analyzer \
-       goto-analyzer-taint \
-       goto-cc-cbmc \
-       goto-cc-file-local \
-       goto-cc-goto-analyzer \
-       goto-cl \
-       goto-diff \
-       goto-gcc \
-       goto-harness \
-       goto-instrument \
        goto-instrument-typedef \
-       invariants \
-       linking-goto-binaries \
        smt2_solver \
        smt2_strings \
-       solver-hardness \
-       statement-list \
        strings \
-       symtab2gb \
-       systemc \
+       invariants \
+       goto-diff \
        test-script \
-       validate-trace-xml-schema \
+       goto-analyzer-taint \
+       goto-gcc \
+       goto-harness \
+       goto-cl \
+       goto-cc-cbmc \
+       cbmc-cpp \
+       goto-cc-goto-analyzer \
+       statement-list \
+       systemc \
+       contracts \
+       goto-cc-file-local \
+       linking-goto-binaries \
+       symtab2gb \
+       solver-hardness \
        # Empty last line
 
 ifeq ($(OS),Windows_NT)
