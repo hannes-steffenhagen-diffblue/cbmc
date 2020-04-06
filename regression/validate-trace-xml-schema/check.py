@@ -27,18 +27,19 @@ ExcludedTests = list(map(lambda s: os.path.join(test_base_dir, s), [
     'show_properties1/test.desc',
     # program-only instead of trace
     'vla1/program-only.desc',
+    'Quantifiers-simplify/simplify_not_forall.desc',
     # this one doesn't work for me locally at all
-    'integer-assignments1/test.desc',
+    # 'integer-assignments1/test.desc',
     # these test for invalid command line handling
     'bad_option/test_multiple.desc',
     'bad_option/test.desc',
     # this one produces XML intermingled with main XML output when used with --xml-ui
     'graphml_witness2/test.desc',
-    # this one uses program-only again
-    'Quantifiers-simplify/simplify_not_forall.desc',
     # produces intermingled XML on the command line
     'coverage_report1/test.desc',
     'coverage_report1/paths.desc',
+    'graphml_witness1/test.desc',
+    'switch8/program-only.desc',
     # this uses json-ui (fails for a different reason actually, but should also
     #   fail because of command line incompatibility)
     'json1/test.desc',
@@ -47,12 +48,7 @@ ExcludedTests = list(map(lambda s: os.path.join(test_base_dir, s), [
     'reachability-slice/test2.desc',
     'reachability-slice/test3.desc',
     'reachability-slice-interproc/test.desc',
-    # again, intermingles several XML documents
-    'graphml_witness1/test.desc',
-    'switch8/program-only.desc',
-    # show-goto-functions
     'unsigned1/test.desc',
-    # show-goto-functions
     'reachability-slice-interproc3/test.desc',
     'sync_lock_release-1/symbol_per_type.desc'
 ]))
