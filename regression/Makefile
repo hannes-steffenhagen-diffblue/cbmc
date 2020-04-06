@@ -31,6 +31,7 @@ DIRS = ansi-c \
        symtab2gb \
        systemc \
        test-script \
+       validate-trace-xml-schema \
 			 # Empty last line
 
 ifeq ($(OS),Windows_NT)
