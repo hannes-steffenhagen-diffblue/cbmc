@@ -15,15 +15,4 @@ if ! command -v javac > /dev/null; then
     exit
 fi
 
-# Java versions are complicated
-
-java_version=$(javac -version | cut -d ' ' -f 2)
-javac_major_version=$(echo $java_version | cut -d '.' -f 1)
-javac_minor_version=$(echo $java_version | cut -d '.' -f 2)
-
-if [ $javac_major_version -eq 1 ] || [ $javac_minor_version -ge 8 ]; then
-    echo "JDK version less than 8, skipping XSD tests"
-    exit
-fi
-
 python3 check.py ../../src/cbmc/cbmc
