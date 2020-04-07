@@ -50,7 +50,9 @@ ExcludedTests = list(map(lambda s: os.path.join(test_base_dir, s), [
     'reachability-slice-interproc/test.desc',
     'unsigned1/test.desc',
     'reachability-slice-interproc3/test.desc',
-    'sync_lock_release-1/symbol_per_type.desc'
+    'sync_lock_release-1/symbol_per_type.desc',
+    # this test is marked broken-smt-backend and doesn't work for me locally
+    'integer-assignments1/test.desc'
 ]))
 
 if len(sys.argv) != 2:
