@@ -10,9 +10,9 @@ if [ $python_minor_version -lt 5 ]; then
     exit
 fi
 
-if ! command -v javac > /dev/null; then
-    echo "javac not found, skipping XSD tests"
-    exit
+xmllint="$(command -v xmllint)"
+if [ $? -ne 0 ] > /dev/null; then
+    echo "xmllint not found, skipping XSD tests"
 fi
 
-python3 check.py ../../src/cbmc/cbmc
+python3 check.py ../../src/cbmc/cbmc "$xmllint"

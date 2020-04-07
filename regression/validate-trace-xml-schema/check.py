@@ -55,10 +55,12 @@ ExcludedTests = list(map(lambda s: os.path.join(test_base_dir, s), [
     'integer-assignments1/test.desc'
 ]))
 
-if len(sys.argv) != 2:
-    sys.stderr.write('Usage: check.py <path-to-cbmc>')
+# TODO maybe consider looking them up on PATH, but direct paths are
+#      harder to get wrong
+if len(sys.argv) != 3:
+    sys.stderr.write('Usage: check.py <path-to-cbmc> <path-to-xmllint>')
 CbmcPath = os.path.abspath(sys.argv[1])
-XsdValidateJar = os.path.join(this_script_dir, 'validate-xsd/build/libs/validate-xsd-1.0-SNAPSHOT-uber.jar')
+XmlLintPath = os.path.abspath(sys.argv[2])
 
 
 class ChangeDir:
@@ -89,7 +91,8 @@ class Validator:
 
     def check_spec(self, spec_path):
         self.total_test_count += 1
-        sys.stdout.write('*** Checking [{}/{}] {}... '.format(self.total_test_count, self.total_specs, spec_path))
+        sys.stdout.write('*** Checking [{}/{}] {}... '.format(
+            self.total_test_count, self.total_specs, spec_path))
         sys.stdout.flush()
         spec_dir = os.path.dirname(spec_path)
         spec = self.read_spec(spec_path)
@@ -113,17 +116,21 @@ class Validator:
                        stdout=trace_file)
 
     def check_trace(self, spec_path, trace_file):
-        validate_result = subprocess.run(['java', '-jar', XsdValidateJar, TraceXsdSpec],
+        validate_result = subprocess.run([XmlLintPath,
+                                          '--noout',  # we don't want it to print the XML we pipe in
+                                          '--schema', TraceXsdSpec,
+                                          '-'  # read from STDIN
+                                          ],
                                          stdin=trace_file,
                                          stdout=subprocess.PIPE,
                                          stderr=subprocess.PIPE)
         if validate_result.returncode == 0:
-            print('[SUCCESS]')
+            sys.stdout.buffer.write(b'[SUCCESS]\n')
         else:
-            print('[FAILURE]')
+            sys.stdout.buffer.write(b'[FAILURE]\n')
             self.failed_tests.append(spec_path)
-        sys.stdout.buffer.write(validate_result.stdout)
-        sys.stdout.buffer.write(validate_result.stderr)
+            sys.stdout.buffer.write(validate_result.stdout)
+            sys.stdout.buffer.write(validate_result.stderr)
 
     def read_spec(self, spec_path):
         with open(spec_path) as spec_file:
@@ -148,17 +155,6 @@ class Validator:
             for spec in self.failed_tests:
                 print(spec)
 
-
-def run_gradle(args):
-    with ChangeDir('validate-xsd'):
-        if os.name == 'nt':
-            subprocess.check_call(['cmd', '/c', 'gradlew.bat'] + args)
-        else:
-            subprocess.check_call(['./gradlew'] + args)
-
-
-# ensure that the uberjar exists and is up to date
-run_gradle(['uberjar'])
 
 test_desc_files = list(
     filter(lambda s: s not in ExcludedTests, glob.glob(os.path.join(test_base_dir, '*/*.desc'))))
