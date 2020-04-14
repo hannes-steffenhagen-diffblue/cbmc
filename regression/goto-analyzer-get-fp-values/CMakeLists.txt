@@ -1,6 +1,3 @@
-add_test(
-  NAME goto-analyzer-get-fp-values
-  COMMAND 
-    python3 "${CMAKE_CURRENT_LIST_DIR}/test.py"
-    "$<TARGET_FILE:goto-analyzer>"
-    "${CMAKE_CURRENT_LIST_DIR}/test.c")
+add_test_pl_tests(
+    "${CMAKE_CURRENT_LIST_DIR}/chain.sh $<TARGET_FILE:goto-analyzer>"
+)

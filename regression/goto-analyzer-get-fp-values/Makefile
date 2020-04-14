@@ -1,2 +1,2 @@
 test:
-  python3 test.py -- ../../src/goto-analyzer/goto-analyzer test.c
+	@../test.pl -e -p -c 'sh ../chain.sh ../../../src/goto-analyzer/goto-analyzer'
