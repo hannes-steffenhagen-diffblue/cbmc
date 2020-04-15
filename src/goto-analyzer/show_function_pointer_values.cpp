@@ -33,7 +33,7 @@ void print_function_pointer_values(
 
     for(auto const &function_entry :  goto_model.goto_functions.function_map)
     {
-        for_each_goto_location(function_entry.second, [&](ai_baset::locationt instruction_location)
+        for_each_instruction(function_entry.second, [&](ai_baset::locationt instruction_location)
         {
             auto is_assign = instruction_location->is_assign();
             if (is_assign)
