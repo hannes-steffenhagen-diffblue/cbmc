@@ -12,7 +12,7 @@ test_base_dir = os.path.abspath(os.path.join(this_script_dir, '..', 'cbmc'))
 
 # some tests in the cbmc suite don't work for the trace checks for one reason or another
 ExcludedTests = list(map(lambda s: os.path.join(test_base_dir, s), [
-    # these tests except input from stdin
+    # these tests expect input from stdin
     'json-interface1/test_wrong_option.desc',
     'json-interface1/test.desc',
     'json-interface1/test_wrong_flag.desc',
@@ -134,12 +134,12 @@ class Validator:
 
     def read_spec(self, spec_path):
         with open(spec_path) as spec_file:
-            spec = spec_file.readline().split()
+            test_kind = spec_file.readline().split()
             source_file = spec_file.readline().strip()
             extra_args = spec_file.readline().split()
-        is_future = 'FUTURE' in spec
-        is_thorough = 'THOROUGH' in spec
-        is_knownbug = 'KNOWNBUG' in spec
+        is_future = 'FUTURE' in test_kind
+        is_thorough = 'THOROUGH' in test_kind
+        is_knownbug = 'KNOWNBUG' in test_kind
         return TestSpec(args=[source_file] + extra_args,
                         is_thorough=is_thorough,
                         is_future=is_future,
