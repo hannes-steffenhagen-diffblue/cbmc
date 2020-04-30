@@ -12,6 +12,8 @@ Author: Diffblue Ltd.
 #include <set>
 #include <string>
 #include <utility>
+#include <unordered_set>
+#include <fstream>
 
 #include <goto-programs/goto_convert.h>
 #include <goto-programs/goto_model.h>
@@ -22,10 +24,55 @@ Author: Diffblue Ltd.
 #include <util/exit_codes.h>
 #include <util/invariant.h>
 #include <util/version.h>
+#include <goto-instrument/dump_c.h>
 
 #include "function_call_harness_generator.h"
 #include "goto_harness_generator_factory.h"
 #include "memory_snapshot_harness_generator.h"
+
+
+std::unordered_set<irep_idt> collect_symbols_referenced_by_harness(
+  const goto_modelt &goto_model_with_harness,
+  const std::unordered_set<irep_idt> &goto_model_without_harness_symbols)
+
+static goto_modelt filter_goto_model()
+{
+  // things we need to do
+  // 1. Iterate over all symbols in the symbol table (and instructions in goto functions)
+  //      that were NOT present in the original symbol table
+  // 2. Collect all symbols that are references in these symbols and functions
+  // 3. Kick out all of the symbols that aren't in 2.
+  // 4. Remove the bodies of all goto functions that aren't new
+  auto harness_referenced_symbols = std::unordered_set<irep_idt>{};
+  auto const add_expr_referenced_symbols = [&harness_referenced_symbols](const exprt &expr)
+  {
+    for(auto it = expr.depth_cbegin(); it != expr.depth_cend(); ++it) {
+      if(auto const symbol_expr = expr_try_dynamic_cast<symbol_exprt>(*it)) {
+        harness_referenced_symbols.insert(symbol_expr->get_identifier());
+      }
+    }
+  };
+  for(auto &symbol : goto_model_with_harness.get_symbol_table()) {
+    if(goto_model_without_harness_symbols.count(symbol.first) == 0) {
+      harness_referenced_symbols.insert(symbol.first);
+      if(symbol.second.is_function) {
+        auto const &function_body = goto_model_with_harness
+          .get_goto_functions()
+          .function_map
+          .find(symbol.first)
+          ->second
+          .body;
+        for(auto const &instruction : function_body.instructions)
+        {
+          add_expr_referenced_symbols(instruction.code);
+          add_expr_referenced_symbols(instruction.guard);
+        }
+      } else {
+        add_expr_referenced_symbols(symbol.second.value);
+      }
+    }
+  }
+}
 
 // The basic idea is that this module is handling the following
 // sequence of events:
@@ -62,6 +109,13 @@ int goto_harness_parse_optionst::doit()
                                      got_harness_config.in_file + "'"};
   }
   auto goto_model = std::move(read_goto_binary_result.value());
+  auto const goto_model_without_harness_symbols = [&goto_model](){
+    auto symbols = std::unordered_set<irep_idt>{};
+    for(auto const &symbol : goto_model.get_symbol_table()) {
+      symbols.insert(symbol.first);
+    }
+    return symbols;
+  }();
 
   // This has to be called after the defaults are set up (as per the
   // config.set(cmdline) above) otherwise, e.g. the architecture specification
@@ -87,13 +141,15 @@ int goto_harness_parse_optionst::doit()
   harness_generator->generate(
     goto_model, got_harness_config.harness_function_name);
 
-  // Write end result to new goto-binary
-  if(write_goto_binary(
-       got_harness_config.out_file, goto_model, ui_message_handler))
-  {
-    throw system_exceptiont{"failed to write goto program from file '" +
-                            got_harness_config.out_file + "'"};
-  }
+  auto filtered_goto_model = filter_goto_model(goto_model, goto_model_without_harness_symbols);
+  
+  auto harness_out = std::ofstream{got_harness_config.out_file};
+  dump_c(goto_model.goto_functions,
+     true,
+     true,
+     false,
+     namespacet{goto_model.get_symbol_table},
+     harness_out);
 
   return CPROVER_EXIT_SUCCESS;
 }
