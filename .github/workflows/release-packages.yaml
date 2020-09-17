@@ -86,8 +86,13 @@ jobs:
           $cpack = "$(Split-Path -Parent (Get-Command cmake).Source)\cpack.exe"
           & $cpack . -C Release
           $msi_name = (Get-ChildItem -name *.msi).Name
+          Write-Output "MSI Name = $msi_name"
           Write-Output "::set-output name=msi_installer::build/$msi_name"
           Write-Output "::set-output name=msi_name::$msi_name"
+      - name: Check create packages output
+        run: |
+          Write-Output "steps.create_packages.outputs.msi_installer = ${{steps.create_packages.outputs.msi_installer}}"
+          Write-Output "steps.create_packages.outputs.msi_name = ${{steps.create_packages.outputs.msi_name}}"
       - name: Get release info
         id: get_release_info
         uses: bruceadams/get-release@v1.2.0
