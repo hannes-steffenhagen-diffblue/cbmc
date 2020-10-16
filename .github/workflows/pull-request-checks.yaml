@@ -21,6 +21,9 @@ jobs:
           make -C src minisat2-download
           cpanm Thread::Pool::Simple
       - name: Build with make
+        env:
+          # Enable extra safety checks for libstdc++
+          CP_EXTRA_CFLAGS: -D_GLIBCXX_DEBUG
         run: |
           make -C src CXX='/usr/bin/g++' -j2
           make -C unit CXX='/usr/bin/g++' -j2
@@ -58,7 +61,12 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=/usr/bin/gcc -DCMAKE_CXX_COMPILER=/usr/bin/g++
+          cmake .. \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_COMPILER=/usr/bin/gcc \
+            -DCMAKE_CXX_COMPILER=/usr/bin/g++ \
+            -DCMAKE_CXX_FLAGS="-D_GLIBCXX_DEBUG"
       - name: Build with Ninja
         run: cd build; ninja
       - name: Check if package building works
