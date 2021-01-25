@@ -13,6 +13,8 @@ Author: Romain Brenguier, romain.brenguier@diffblue.com
 #define CPROVER_GOTO_SYMEX_GOTO_STATE_H
 
 #include <util/sharing_map.h>
+#include <unordered_map>
+#include <unordered_set>
 
 #include <analyses/guard.h>
 #include <analyses/local_safe_pointers.h>
@@ -23,6 +25,14 @@ Author: Romain Brenguier, romain.brenguier@diffblue.com
 // Forward declaration required since subclass is used explicitly
 // by the parent class.
 class goto_symex_statet;
+
+struct dereference_cachet {
+  private:
+  std::unordered_map<dereference_exprt, symbol_exprt> cache;
+  public:
+  optionalt<const symbol_exprt&> lookup(const dereference_exprt &dereference) const;
+  void insert(dereference_exprt new_cached_expr, symbol_exprt new_cache_symbol);
+};
 
 /// Container for data that varies per program point, e.g. the constant
 /// propagator state, when state needs to branch. This is copied out of
@@ -38,6 +48,8 @@ protected:
   symex_level2t level2;
 
 public:
+  dereference_cachet dereference_cache;
+
   const symex_level2t &get_level2() const
   {
     return level2;
