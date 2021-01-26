@@ -12,7 +12,7 @@ Author: Romain Brenguier, romain.brenguier@diffblue.com
 
 #include <util/format_expr.h>
 
-optionalt<const symbol_exprt&> dereference_cachet::lookup(const dereference_exprt &dereference) const
+optionalt<symbol_exprt> dereference_cachet::lookup(const exprt &dereference) const
 {
   auto it = cache.find(dereference);
   if(it == cache.end()) {
@@ -22,9 +22,13 @@ optionalt<const symbol_exprt&> dereference_cachet::lookup(const dereference_expr
   }
 }
 
-void dereference_cachet::insert(dereference_exprt new_cached_expr, symbol_exprt new_cache_symbol)
+void dereference_cachet::insert(exprt new_cached_expr, symbol_exprt new_cache_symbol)
 {
   cache.emplace(std::move(new_cached_expr), std::move(new_cache_symbol));
+}
+
+void dereference_cachet::clear() {
+    cache.clear();
 }
 
 /// Print the constant propagation map in a human-friendly format.

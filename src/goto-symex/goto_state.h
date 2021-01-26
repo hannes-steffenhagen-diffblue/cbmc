@@ -28,10 +28,12 @@ class goto_symex_statet;
 
 struct dereference_cachet {
   private:
-  std::unordered_map<dereference_exprt, symbol_exprt> cache;
+  std::unordered_map<exprt, symbol_exprt, irep_full_hash> cache;
   public:
-  optionalt<const symbol_exprt&> lookup(const dereference_exprt &dereference) const;
-  void insert(dereference_exprt new_cached_expr, symbol_exprt new_cache_symbol);
+  optionalt<symbol_exprt> lookup(const exprt &pointer) const;
+  void insert(exprt new_cached_pointer_expr, symbol_exprt new_cache_symbol);
+
+    void clear();
 };
 
 /// Container for data that varies per program point, e.g. the constant

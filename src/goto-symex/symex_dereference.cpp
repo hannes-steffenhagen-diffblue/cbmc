@@ -19,10 +19,13 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <util/expr_util.h>
 #include <util/invariant.h>
 #include <util/pointer_offset_size.h>
+#include <util/fresh_symbol.h>
 
 #include <pointer-analysis/value_set_dereference.h>
 
+#include "symex_assign.h"
 #include "symex_dereference_state.h"
+#include "expr_skeleton.h"
 
 /// Transforms an lvalue expression by replacing any dereference operations it
 /// contains with explicit references to the objects they may point to (using
@@ -222,6 +225,11 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
 
     // first make sure there are no dereferences in there
     dereference_rec(tmp1, state, false);
+    if(auto cached = state.dereference_cache.lookup(tmp1))
+    {
+      expr = *cached;
+      return;
+    }
 
     // Depending on the nature of the pointer expression, the recursive deref
     // operation might have introduced a construct such as
@@ -271,10 +279,23 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
       dereference.dereference(tmp1, symex_config.show_points_to_sets);
     // std::cout << "**** " << format(tmp2) << '\n';
 
-    expr.swap(tmp2);
+    auto const &cache_symbol = get_fresh_aux_symbol(
+      tmp2.type(),
+      CPROVER_PREFIX "symex",
+      "dereference_cache",
+      tmp2.source_location(),
+      ID_C,
+      ns,
+      state.symbol_table);
+    exprt::operandst guard{};
 
     // this may yield a new auto-object
-    trigger_auto_object(expr, state);
+    trigger_auto_object(tmp2, state);
+    symex_assignt{state, symex_targett::assignment_typet::HIDDEN, ns, symex_config, target}
+      .assign_symbol(to_ssa_expr(state.rename<L1>(cache_symbol.symbol_expr(), ns).get()), expr_skeletont{}, tmp2, guard);
+    state.dereference_cache.insert(tmp1, cache_symbol.symbol_expr());
+    expr = cache_symbol.symbol_expr();
+
   }
   else if(
     expr.id() == ID_index && to_index_expr(expr).array().id() == ID_member &&
