@@ -3,20 +3,18 @@ typedef struct _this {
   void *voidregion;
 } This;
 
-#define NDIM t->ndim
-
 void Split(This *t)
 {
-typedef struct region {
-  int bounds[NDIM];
-} Region;
+  typedef struct region {
+    int bounds[t->ndim];
+  } Region;
 
   // The following has to be equivalent to
   // Region *region;
   // region = (Region*)t->voidregion;
   Region *region = (Region*)t->voidregion;
   unsigned size=sizeof(region->bounds);
-  assert(size==NDIM*sizeof(int));
+  assert(size == t->ndim * sizeof(int));
 }
 
 int main()

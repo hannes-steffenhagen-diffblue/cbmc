@@ -23,6 +23,10 @@ public:
   {
   }
 
+  std::string as_short_string() const {
+    return id2string(get_file()) + ":"+id2string(get_line());
+  }
+
   std::string as_string() const
   {
     return as_string(false);

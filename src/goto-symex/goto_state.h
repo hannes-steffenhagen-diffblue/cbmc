@@ -22,18 +22,25 @@ Author: Romain Brenguier, romain.brenguier@diffblue.com
 
 #include "renaming_level.h"
 
+#include <iostream>
+
+#include <util/format_expr.h>
+
 // Forward declaration required since subclass is used explicitly
 // by the parent class.
 class goto_symex_statet;
 
 struct dereference_cachet {
   private:
-  std::unordered_map<exprt, symbol_exprt, irep_full_hash> cache;
+  std::unordered_map<exprt, symbol_exprt, irep_hash> cache;
   public:
+
   optionalt<symbol_exprt> lookup(const exprt &pointer) const;
   void insert(exprt new_cached_pointer_expr, symbol_exprt new_cache_symbol);
+  void evict(const exprt &cached_pointer_expr);
+  void clear();
+  void debug_dump() const;
 
-    void clear();
 };
 
 /// Container for data that varies per program point, e.g. the constant

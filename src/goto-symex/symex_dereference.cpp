@@ -20,6 +20,7 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <util/invariant.h>
 #include <util/pointer_offset_size.h>
 #include <util/fresh_symbol.h>
+#include <util/format_expr.h>
 
 #include <pointer-analysis/value_set_dereference.h>
 
@@ -194,6 +195,11 @@ exprt goto_symext::address_arithmetic(
   return result;
 }
 
+__attribute__((noinline)) std::string format_expr(const exprt &expr)
+{
+    return format_to_string(expr);
+}
+
 /// If \p expr is a \ref dereference_exprt, replace it with explicit references
 /// to the objects it may point to. Otherwise recursively apply this function to
 /// \p expr's operands, with special cases for address-of (handled by \ref
@@ -225,10 +231,19 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
 
     // first make sure there are no dereferences in there
     dereference_rec(tmp1, state, false);
-    if(auto cached = state.dereference_cache.lookup(tmp1))
+
+    auto const cache_key = tmp1;
+    if(!write)
     {
-      expr = *cached;
-      return;
+      if(auto cached = state.dereference_cache.lookup(cache_key))
+      {
+        log.status() << "found cache for [" << format(cache_key) << "] " << format(*cached) << '\n';
+        expr = *cached;
+        return;
+      }
+    } else {
+      log.status() << "evicting " << format(cache_key) << " because it is being written to" << messaget::eom;
+      // state.dereference_cache.evict(cache_key);
     }
 
     // Depending on the nature of the pointer expression, the recursive deref
@@ -247,7 +262,6 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
     // Note we don't L2 rename non-constant symbols at this point, because the
     // value-set works in terms of L1 names and we don't want to ask it to
     // dereference an L2 pointer, which it would not have an entry for.
-
     tmp1 = state.rename<L1_WITH_CONSTANT_PROPAGATION>(tmp1, ns).get();
 
     do_simplify(tmp1);
@@ -279,22 +293,29 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
       dereference.dereference(tmp1, symex_config.show_points_to_sets);
     // std::cout << "**** " << format(tmp2) << '\n';
 
-    auto const &cache_symbol = get_fresh_aux_symbol(
-      tmp2.type(),
-      CPROVER_PREFIX "symex",
-      "dereference_cache",
-      tmp2.source_location(),
-      ID_C,
-      ns,
-      state.symbol_table);
-    exprt::operandst guard{};
 
     // this may yield a new auto-object
     trigger_auto_object(tmp2, state);
-    symex_assignt{state, symex_targett::assignment_typet::HIDDEN, ns, symex_config, target}
-      .assign_symbol(to_ssa_expr(state.rename<L1>(cache_symbol.symbol_expr(), ns).get()), expr_skeletont{}, tmp2, guard);
-    state.dereference_cache.insert(tmp1, cache_symbol.symbol_expr());
-    expr = cache_symbol.symbol_expr();
+
+    if(!write)
+    {
+      auto const &cache_symbol = get_fresh_aux_symbol(
+        tmp2.type(),
+        "symex",
+        "dereference_cache",
+        tmp2.source_location(),
+        ID_C,
+        ns,
+        state.symbol_table);
+      exprt::operandst guard{};
+      log.status() << __PRETTY_FUNCTION__ << ": assigning " << format(tmp2) << " to " << format(cache_symbol.symbol_expr()) << messaget::eom;
+      auto assign = symex_assignt{state, symex_targett::assignment_typet::HIDDEN, ns, symex_config, target};
+      assign.assign_symbol(to_ssa_expr(state.rename<L1>(cache_symbol.symbol_expr(), ns).get()), expr_skeletont{}, tmp2, guard);
+      state.dereference_cache.insert(cache_key, cache_symbol.symbol_expr());
+      expr = cache_symbol.symbol_expr();
+    } else {
+      expr = tmp2;
+    }
 
   }
   else if(
