@@ -5,7 +5,8 @@ typedef struct _this {
 
 void Split(This *t)
 {
-  typedef struct region {
+  typedef struct region
+  {
     int bounds[t->ndim];
   } Region;
 

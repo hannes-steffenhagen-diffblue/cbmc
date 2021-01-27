@@ -17,16 +17,16 @@ Author: Daniel Kroening, kroening@kroening.com
 #include <util/exception_utils.h>
 #include <util/expr_iterator.h>
 #include <util/expr_util.h>
+#include <util/format_expr.h>
+#include <util/fresh_symbol.h>
 #include <util/invariant.h>
 #include <util/pointer_offset_size.h>
-#include <util/fresh_symbol.h>
-#include <util/format_expr.h>
 
 #include <pointer-analysis/value_set_dereference.h>
 
+#include "expr_skeleton.h"
 #include "symex_assign.h"
 #include "symex_dereference_state.h"
-#include "expr_skeleton.h"
 
 /// Transforms an lvalue expression by replacing any dereference operations it
 /// contains with explicit references to the objects they may point to (using
@@ -197,7 +197,7 @@ exprt goto_symext::address_arithmetic(
 
 __attribute__((noinline)) std::string format_expr(const exprt &expr)
 {
-    return format_to_string(expr);
+  return format_to_string(expr);
 }
 
 /// If \p expr is a \ref dereference_exprt, replace it with explicit references
@@ -237,12 +237,16 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
     {
       if(auto cached = state.dereference_cache.lookup(cache_key))
       {
-        log.status() << "found cache for [" << format(cache_key) << "] " << format(*cached) << '\n';
+        log.status() << "found cache for [" << format(cache_key) << "] "
+                     << format(*cached) << '\n';
         expr = *cached;
         return;
       }
-    } else {
-      log.status() << "evicting " << format(cache_key) << " because it is being written to" << messaget::eom;
+    }
+    else
+    {
+      log.status() << "evicting " << format(cache_key)
+                   << " because it is being written to" << messaget::eom;
       // state.dereference_cache.evict(cache_key);
     }
 
@@ -308,15 +312,27 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
         ns,
         state.symbol_table);
       exprt::operandst guard{};
-      log.status() << __PRETTY_FUNCTION__ << ": assigning " << format(tmp2) << " to " << format(cache_symbol.symbol_expr()) << messaget::eom;
-      auto assign = symex_assignt{state, symex_targett::assignment_typet::HIDDEN, ns, symex_config, target};
-      assign.assign_symbol(to_ssa_expr(state.rename<L1>(cache_symbol.symbol_expr(), ns).get()), expr_skeletont{}, tmp2, guard);
+      log.status() << __PRETTY_FUNCTION__ << ": assigning " << format(tmp2)
+                   << " to " << format(cache_symbol.symbol_expr())
+                   << messaget::eom;
+      auto assign = symex_assignt{
+        state,
+        symex_targett::assignment_typet::HIDDEN,
+        ns,
+        symex_config,
+        target};
+      assign.assign_symbol(
+        to_ssa_expr(state.rename<L1>(cache_symbol.symbol_expr(), ns).get()),
+        expr_skeletont{},
+        tmp2,
+        guard);
       state.dereference_cache.insert(cache_key, cache_symbol.symbol_expr());
       expr = cache_symbol.symbol_expr();
-    } else {
+    }
+    else
+    {
       expr = tmp2;
     }
-
   }
   else if(
     expr.id() == ID_index && to_index_expr(expr).array().id() == ID_member &&

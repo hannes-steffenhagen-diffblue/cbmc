@@ -12,9 +12,9 @@ Author: Romain Brenguier, romain.brenguier@diffblue.com
 #ifndef CPROVER_GOTO_SYMEX_GOTO_STATE_H
 #define CPROVER_GOTO_SYMEX_GOTO_STATE_H
 
-#include <util/sharing_map.h>
 #include <unordered_map>
 #include <unordered_set>
+#include <util/sharing_map.h>
 
 #include <analyses/guard.h>
 #include <analyses/local_safe_pointers.h>
@@ -30,17 +30,17 @@ Author: Romain Brenguier, romain.brenguier@diffblue.com
 // by the parent class.
 class goto_symex_statet;
 
-struct dereference_cachet {
-  private:
+struct dereference_cachet
+{
+private:
   std::unordered_map<exprt, symbol_exprt, irep_hash> cache;
-  public:
 
+public:
   optionalt<symbol_exprt> lookup(const exprt &pointer) const;
   void insert(exprt new_cached_pointer_expr, symbol_exprt new_cache_symbol);
   void evict(const exprt &cached_pointer_expr);
   void clear();
   void debug_dump() const;
-
 };
 
 /// Container for data that varies per program point, e.g. the constant

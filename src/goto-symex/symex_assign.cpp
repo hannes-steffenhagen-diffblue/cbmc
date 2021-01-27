@@ -146,7 +146,6 @@ void symex_assignt::assign_from_struct(
   }
 }
 
-
 #include <iostream>
 
 void symex_assignt::assign_non_struct_symbol(
@@ -207,7 +206,8 @@ void symex_assignt::assign_non_struct_symbol(
     current_assignment_type);
 
   const ssa_exprt &l1_lhs = assignment.lhs;
-  std::cout << "assign is divisible? " << std::boolalpha << state.field_sensitivity.is_divisible(l1_lhs) << '\n';
+  std::cout << "assign is divisible? " << std::boolalpha
+            << state.field_sensitivity.is_divisible(l1_lhs) << '\n';
   if(state.field_sensitivity.is_divisible(l1_lhs))
   {
     // Split composite symbol lhs into its components

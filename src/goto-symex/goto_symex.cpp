@@ -44,7 +44,9 @@ void goto_symext::symex_assign(
   exprt lhs = clean_expr(o_lhs, state, true);
   exprt rhs = clean_expr(o_rhs, state, false);
 
-  log.status() << '[' << code.source_location().as_short_string() << ']' << ": Assigning " << format(rhs) << " to " << format(lhs) << messaget::eom;
+  log.status() << '[' << code.source_location().as_short_string() << ']'
+               << ": Assigning " << format(rhs) << " to " << format(lhs)
+               << messaget::eom;
   DATA_INVARIANT(
     lhs.type() == rhs.type(), "assignments must be type consistent");
 
