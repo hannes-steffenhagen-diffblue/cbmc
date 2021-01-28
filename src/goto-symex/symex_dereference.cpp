@@ -232,24 +232,6 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
     // first make sure there are no dereferences in there
     dereference_rec(tmp1, state, false);
 
-    auto const cache_key = tmp1;
-    if(!write)
-    {
-      if(auto cached = state.dereference_cache.lookup(cache_key))
-      {
-        log.status() << "found cache for [" << format(cache_key) << "] "
-                     << format(*cached) << '\n';
-        expr = *cached;
-        return;
-      }
-    }
-    else
-    {
-      log.status() << "evicting " << format(cache_key)
-                   << " because it is being written to" << messaget::eom;
-      // state.dereference_cache.evict(cache_key);
-    }
-
     // Depending on the nature of the pointer expression, the recursive deref
     // operation might have introduced a construct such as
     // (x == &o1 ? o1 : o2).field, in which case we should simplify to push the
@@ -303,6 +285,15 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
 
     if(!write)
     {
+      auto const cache_key = tmp2;
+      if(auto cached = state.dereference_cache.lookup(cache_key))
+      {
+        log.status() << "found cache for [" << format(cache_key) << "] "
+                     << format(*cached) << '\n';
+        expr = *cached;
+        return;
+      }
+
       auto const &cache_symbol = get_fresh_aux_symbol(
         tmp2.type(),
         "symex",
@@ -322,7 +313,7 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
         symex_config,
         target};
       assign.assign_symbol(
-        to_ssa_expr(state.rename<L1>(cache_symbol.symbol_expr(), ns).get()),
+        ssa_exprt{cache_symbol.symbol_expr()},
         expr_skeletont{},
         tmp2,
         guard);

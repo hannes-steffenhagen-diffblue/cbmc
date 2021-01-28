@@ -234,8 +234,8 @@ goto_symext::clean_expr(exprt expr, statet &state, const bool write)
 {
   replace_nondet(expr, path_storage.build_symex_nondet);
   // move lift_lets before dereference so we can properly cache dereferences
-  lift_lets(state, expr);
   dereference(expr, state, write);
+  lift_lets(state, expr);
 
   // make sure all remaining byte extract operations use the root
   // object to avoid nesting of with/update and byte_update when on
