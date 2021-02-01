@@ -285,11 +285,13 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
 
     if(!write)
     {
-      auto const cache_key = tmp2;
+      auto const cache_key = state.field_sensitivity.apply(ns, state, tmp2, write);
+      log.status() << "looking up cache key: " << format(cache_key) << messaget::eom;
+
       if(auto cached = state.dereference_cache.lookup(cache_key))
       {
         log.status() << "found cache for [" << format(cache_key) << "] "
-                     << format(*cached) << '\n';
+                     << format(*cached) << messaget::eom;
         expr = *cached;
         return;
       }
@@ -302,21 +304,25 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
         ID_C,
         ns,
         state.symbol_table);
-      exprt::operandst guard{};
+
       log.status() << __PRETTY_FUNCTION__ << ": assigning " << format(tmp2)
                    << " to " << format(cache_symbol.symbol_expr())
                    << messaget::eom;
+
+      exprt::operandst guard{};
       auto assign = symex_assignt{
         state,
         symex_targett::assignment_typet::HIDDEN,
         ns,
         symex_config,
         target};
+
       assign.assign_symbol(
         ssa_exprt{cache_symbol.symbol_expr()},
         expr_skeletont{},
-        tmp2,
+        cache_key,
         guard);
+
       state.dereference_cache.insert(cache_key, cache_symbol.symbol_expr());
       expr = cache_symbol.symbol_expr();
     }

@@ -228,6 +228,7 @@ void symex_assignt::assign_symbol(
   const exprt::operandst &guard)
 {
   // Shortcut the common case of a whole-struct initializer:
+  std::cout << "assign_symbol:" << format(lhs) << '\n';
   if(rhs.id() == ID_struct)
     assign_from_struct(lhs, full_lhs, to_struct_expr(rhs), guard);
   else
