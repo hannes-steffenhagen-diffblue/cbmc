@@ -147,7 +147,7 @@ void goto_symext::process_array_expr(statet &state, exprt &expr)
 }
 
 /// Rewrite index/member expressions in byte_extract to offset
-static void adjust_byte_extract_rec(exprt &expr, const namespacet &ns)
+void adjust_byte_extract_rec(exprt &expr, const namespacet &ns)
 {
   Forall_operands(it, expr)
     adjust_byte_extract_rec(*it, ns);
@@ -233,7 +233,6 @@ NODISCARD exprt
 goto_symext::clean_expr(exprt expr, statet &state, const bool write)
 {
   replace_nondet(expr, path_storage.build_symex_nondet);
-  // move lift_lets before dereference so we can properly cache dereferences
   dereference(expr, state, write);
   lift_lets(state, expr);
 

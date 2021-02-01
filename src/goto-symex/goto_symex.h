@@ -876,4 +876,6 @@ renamedt<exprt, L2> try_evaluate_pointer_comparisons(
   const irep_idt &language_mode,
   const namespacet &ns);
 
+void adjust_byte_extract_rec(exprt &expr, const namespacet &ns);
+
 #endif // CPROVER_GOTO_SYMEX_GOTO_SYMEX_H
