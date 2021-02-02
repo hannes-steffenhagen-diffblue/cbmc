@@ -28,9 +28,6 @@ Author: Daniel Kroening, kroening@kroening.com
 #include "symex_assign.h"
 #include "symex_dereference_state.h"
 
-
-#include <sstream>
-
 /// Transforms an lvalue expression by replacing any dereference operations it
 /// contains with explicit references to the objects they may point to (using
 /// \ref goto_symext::dereference_rec), and translates `byte_extract,` `member`
@@ -289,19 +286,15 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
     if(!write)
     {
       auto const cache_key = state.field_sensitivity.apply(ns, state, tmp2, write);
-      // log.status() << "looking up cache key: " << format(cache_key) << messaget::eom;
+      log.status() << "looking up cache key: " << format(cache_key) << messaget::eom;
 
       if(auto cached = state.dereference_cache.lookup(cache_key))
       {
-        // log.status() << "found cache for [" << format(cache_key) << "] "
-        //              << format(*cached) << messaget::eom;
+        log.status() << "found cache for [" << format(cache_key) << "] "
+                     << format(*cached) << messaget::eom;
         expr = *cached;
         return;
       }
-
-      // dereference may introduce let expressions. These need to be lifted before assignment
-      auto cache_value = cache_key;
-      lift_lets(state, cache_value);
 
       auto const &cache_symbol = get_fresh_aux_symbol(
         tmp2.type(),
@@ -312,9 +305,9 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
         ns,
         state.symbol_table);
 
-      // log.status() << __PRETTY_FUNCTION__ << ": assigning " << format(cache_value)
-      //              << " to " << format(cache_symbol.symbol_expr())
-      //              << messaget::eom;
+      log.status() << __PRETTY_FUNCTION__ << ": assigning " << format(tmp2)
+                   << " to " << format(cache_symbol.symbol_expr())
+                   << messaget::eom;
 
       exprt::operandst guard{};
       auto assign = symex_assignt{
@@ -327,7 +320,7 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
       assign.assign_symbol(
         ssa_exprt{cache_symbol.symbol_expr()},
         expr_skeletont{},
-        cache_value,
+        cache_key,
         guard);
 
       state.dereference_cache.insert(cache_key, cache_symbol.symbol_expr());
