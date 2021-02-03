@@ -305,9 +305,11 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
         ns,
         state.symbol_table);
 
-      log.status() << __PRETTY_FUNCTION__ << ": assigning " << format(tmp2)
-                   << " to " << format(cache_symbol.symbol_expr())
-                   << messaget::eom;
+      // we need to lift possible lets
+      // (come from the value set to avoid repeating complex pointer comparisons)
+      auto cache_value = cache_key;
+      lift_lets(state, cache_value);
+      log.status() << "cache_value = " << format(cache_value) << messaget::eom;
 
       exprt::operandst guard{};
       auto assign = symex_assignt{
@@ -320,7 +322,7 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
       assign.assign_symbol(
         ssa_exprt{cache_symbol.symbol_expr()},
         expr_skeletont{},
-        cache_key,
+        cache_value,
         guard);
 
       state.dereference_cache.insert(cache_key, cache_symbol.symbol_expr());
