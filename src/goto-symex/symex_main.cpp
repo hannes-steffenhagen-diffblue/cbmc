@@ -202,7 +202,12 @@ void goto_symext::vcc(
 
 void goto_symext::symex_assume(statet &state, const exprt &cond)
 {
-  exprt simplified_cond = clean_expr(cond, state, false);
+  // we are willing to re-write some quantified expressions
+  exprt rewritten_cond = cond;
+  if(has_subexpr(rewritten_cond, ID_exists))
+    rewrite_quantifiers(rewritten_cond, state);
+
+  exprt simplified_cond = clean_expr(rewritten_cond, state, false);
   simplified_cond = state.rename(std::move(simplified_cond), ns).get();
   do_simplify(simplified_cond);
 
@@ -228,14 +233,10 @@ void goto_symext::symex_assume_l2(statet &state, const exprt &cond)
   if(cond.is_false())
     state.reachable = false;
 
-  // we are willing to re-write some quantified expressions
-  exprt rewritten_cond = cond;
-  if(has_subexpr(rewritten_cond, ID_exists))
-    rewrite_quantifiers(rewritten_cond, state);
 
   if(state.threads.size()==1)
   {
-    exprt tmp = state.guard.guard_expr(rewritten_cond);
+    exprt tmp = state.guard.guard_expr(cond);
     target.assumption(state.guard.as_expr(), tmp, state.source);
   }
   // symex_target_equationt::convert_assertions would fail to
@@ -245,7 +246,7 @@ void goto_symext::symex_assume_l2(statet &state, const exprt &cond)
   // x=0;                   assume(x==1);
   // assert(x!=42);         x=42;
   else
-    state.guard.add(rewritten_cond);
+    state.guard.add(cond);
 
   if(state.atomic_section_id!=0 &&
      state.guard.is_false())

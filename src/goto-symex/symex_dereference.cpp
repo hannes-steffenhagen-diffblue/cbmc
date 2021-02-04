@@ -274,24 +274,23 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
       expr_is_not_null,
       log);
 
-    // std::cout << "**** " << format(tmp1) << '\n';
     exprt tmp2 =
       dereference.dereference(tmp1, symex_config.show_points_to_sets);
-    // std::cout << "**** " << format(tmp2) << '\n';
 
 
     // this may yield a new auto-object
     trigger_auto_object(tmp2, state);
 
-    if(!write)
+    // If the dereference result is not a complicated expression
+    // (i.e. of the form [let p = <expr> in ] (p == &something ? something : ...)
+    // we should just return it unchanged
+    // also if we are on the lhs of an assignment we should also not attempt to go to the cache
+    if(!write && (tmp2.id() == ID_let || tmp2.id() == ID_if))
     {
       auto const cache_key = state.field_sensitivity.apply(ns, state, tmp2, write);
-      log.status() << "looking up cache key: " << format(cache_key) << messaget::eom;
 
       if(auto cached = state.dereference_cache.lookup(cache_key))
       {
-        log.status() << "found cache for [" << format(cache_key) << "] "
-                     << format(*cached) << messaget::eom;
         expr = *cached;
         return;
       }
@@ -309,7 +308,6 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
       // (come from the value set to avoid repeating complex pointer comparisons)
       auto cache_value = cache_key;
       lift_lets(state, cache_value);
-      log.status() << "cache_value = " << format(cache_value) << messaget::eom;
 
       exprt::operandst guard{};
       auto assign = symex_assignt{

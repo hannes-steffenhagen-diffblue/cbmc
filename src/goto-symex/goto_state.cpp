@@ -43,21 +43,16 @@ void dereference_cachet::insert(
   exprt new_cached_expr,
   symbol_exprt new_cache_symbol)
 {
-  std::cout << "caching " << format(new_cached_expr) << " as "
-            << format(new_cache_symbol) << '\n';
   // cache.emplace(std::move(new_cached_expr), std::move(new_cache_symbol));
 }
 
 void dereference_cachet::evict(const exprt &cached_pointer_expr)
 {
-  std::cout << "evicting " << format(cached_pointer_expr)
-            << " from deref cache\n";
   // cache.erase(cached_pointer_expr);
 }
 
 void dereference_cachet::clear()
 {
-  std::cout << "clearing deref cache\n";
   // cache.clear();
 }
 

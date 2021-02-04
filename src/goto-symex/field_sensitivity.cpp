@@ -234,9 +234,7 @@ void field_sensitivityt::field_assignments(
   symex_targett &target,
   bool allow_pointer_unsoundness)
 {
-  std::cout << "performing field assignments for " << format(lhs) << '\n';
   const exprt lhs_fs = apply(ns, state, lhs, false);
-  std::cout << "applied field sensitivity: " << format(lhs_fs) << '\n';
 
   bool run_apply_bak = run_apply;
   run_apply = false;

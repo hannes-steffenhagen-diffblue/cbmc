@@ -2522,9 +2522,10 @@ void smt2_convt::convert_typecast(const typecast_exprt &expr)
       convert_typecast(tmp);
     }
   }
-  else
+  else {
     UNEXPECTEDCASE(
-      "TODO typecast8 "+src_type.id_string()+" -> "+dest_type.id_string());
+      "TODO typecast8 "+src_type.pretty()+" -> "+dest_type.pretty());
+  }
 }
 
 void smt2_convt::convert_floatbv_typecast(const floatbv_typecast_exprt &expr)
