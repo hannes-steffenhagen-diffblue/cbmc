@@ -27,33 +27,33 @@ void dereference_cachet::debug_dump() const
 optionalt<symbol_exprt>
 dereference_cachet::lookup(const exprt &dereference) const
 {
-  return nullopt;
-  // auto it = cache.find(dereference);
-  // if(it == cache.end()) {
-  //   std::cout << "missed cache lookup for " << format(dereference) << '\n';
-  //   debug_dump();
-  //   return nullopt;
-  // } else {
-  //   std::cout << "found cached name " << format(it->second) << " for " << format(dereference) << '\n';
-  //   return {it->second};
-  // }
+//  return nullopt;
+   auto it = cache.find(dereference);
+   if(it == cache.end()) {
+//     std::cout << "missed cache lookup for " << format(dereference) << '\n';
+//     debug_dump();
+     return nullopt;
+   } else {
+//     std::cout << "found cached name " << format(it->second) << " for " << format(dereference) << '\n';
+     return {it->second};
+   }
 }
 
 void dereference_cachet::insert(
   exprt new_cached_expr,
   symbol_exprt new_cache_symbol)
 {
-  // cache.emplace(std::move(new_cached_expr), std::move(new_cache_symbol));
+   cache.emplace(std::move(new_cached_expr), std::move(new_cache_symbol));
 }
 
 void dereference_cachet::evict(const exprt &cached_pointer_expr)
 {
-  // cache.erase(cached_pointer_expr);
+//   cache.erase(cached_pointer_expr);
 }
 
 void dereference_cachet::clear()
 {
-  // cache.clear();
+//   cache.clear();
 }
 
 /// Print the constant propagation map in a human-friendly format.
