@@ -285,18 +285,9 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
     // (i.e. of the form [let p = <expr> in ] (p == &something ? something : ...)
     // we should just return it unchanged
     // also if we are on the lhs of an assignment we should also not attempt to go to the cache
-    auto const operand_size = tmp2.id() == ID_let ?
-       to_let_expr(tmp2).where().operands().size()
-       : tmp2.operands().size();
 
-    const bool should_cache =
-      !write && operand_size > 5;
-    if(!should_cache) {
-        std::cout << "[DEBUG] not caching\n";
-    }
-    if(should_cache)
+    if(true)
     {
-        std::cout << "[DEBUG] Operands > 5:\n\n" << tmp2.pretty() << '\n';
       auto const cache_key = state.field_sensitivity.apply(ns, state, tmp2, write);
 
       if(auto cached = state.dereference_cache.lookup(cache_key))
