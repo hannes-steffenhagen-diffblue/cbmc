@@ -286,7 +286,7 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
     // we should just return it unchanged
     // also if we are on the lhs of an assignment we should also not attempt to go to the cache
 
-    if(true)
+    if(!write)
     {
       auto const cache_key = state.field_sensitivity.apply(ns, state, tmp2, write);
 
