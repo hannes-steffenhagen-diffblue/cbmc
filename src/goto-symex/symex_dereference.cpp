@@ -304,6 +304,7 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
         ID_C,
         ns,
         state.symbol_table);
+      symex_decl(state, cache_symbol.symbol_expr());
 
       // we need to lift possible lets
       // (come from the value set to avoid repeating complex pointer comparisons)
@@ -319,7 +320,7 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
         target};
 
       assign.assign_symbol(
-        ssa_exprt{cache_symbol.symbol_expr()},
+        to_ssa_expr(state.rename<L1>(cache_symbol.symbol_expr(), ns).get()),
         expr_skeletont{},
         cache_value,
         guard);
