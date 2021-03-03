@@ -288,7 +288,7 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
 
     if(!write)
     {
-      auto const cache_key = state.field_sensitivity.apply(ns, state, tmp2, write);
+      auto const cache_key = state.rename<L2>(state.field_sensitivity.apply(ns, state, tmp2, write), ns).get();
 
       if(auto cached = state.dereference_cache.lookup(cache_key))
       {
@@ -314,7 +314,7 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
       exprt::operandst guard{};
       auto assign = symex_assignt{
         state,
-        symex_targett::assignment_typet::HIDDEN,
+        symex_targett::assignment_typet::STATE,
         ns,
         symex_config,
         target};
