@@ -288,7 +288,15 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
 
     if(!write)
     {
-      auto const cache_key = state.rename<L2>(state.field_sensitivity.apply(ns, state, tmp2, write), ns).get();
+      auto const cache_key = [&]{
+          auto cache_key = state.field_sensitivity.apply(ns, state, tmp2, write);
+          if(auto let_expr = expr_try_dynamic_cast<let_exprt>(tmp2)) {
+              let_expr->value() = state.rename<L2>(let_expr->value(), ns).get();
+          } else {
+            cache_key = state.rename<L2>(cache_key, ns).get();
+          }
+          return cache_key;
+      }();
 
       if(auto cached = state.dereference_cache.lookup(cache_key))
       {
