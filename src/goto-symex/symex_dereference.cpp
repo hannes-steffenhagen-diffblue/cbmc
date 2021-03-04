@@ -312,7 +312,6 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
         ID_C,
         ns,
         state.symbol_table);
-      symex_decl(state, cache_symbol.symbol_expr());
 
       // we need to lift possible lets
       // (come from the value set to avoid repeating complex pointer comparisons)
