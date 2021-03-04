@@ -229,6 +229,8 @@ void goto_symext::lift_lets(statet &state, exprt &rhs)
   }
 }
 
+std::string format_expr(const exprt &expr);
+
 NODISCARD exprt
 goto_symext::clean_expr(exprt expr, statet &state, const bool write)
 {

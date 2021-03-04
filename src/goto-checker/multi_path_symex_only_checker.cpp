@@ -71,13 +71,16 @@ operator()(propertiest &properties)
   return result;
 }
 
+#include <fstream>
+
 void multi_path_symex_only_checkert::generate_equation()
 {
   const auto symex_start = std::chrono::steady_clock::now();
 
   symex.symex_from_entry_point_of(
     goto_symext::get_goto_function(goto_model), symex_symbol_table);
-
+  std::ofstream out{"/tmp/equation.txt"};
+  equation.output(out);
   const auto symex_stop = std::chrono::steady_clock::now();
   std::chrono::duration<double> symex_runtime =
     std::chrono::duration<double>(symex_stop - symex_start);
