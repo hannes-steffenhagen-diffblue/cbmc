@@ -370,9 +370,7 @@ static void cse_dereference(symex_target_equationt &equation, symbol_tablet &sym
 {
     std::ofstream out{"/tmp/debug_out.txt"};
   std::unordered_map<exprt, symbol_exprt, irep_hash> dereference_cache{};
-  int SSA_step_nr = 0;
-  for(auto it = equation.SSA_steps.begin(); it != equation.SSA_steps.end();
-      ++it, ++SSA_step_nr)
+  for(auto it = equation.SSA_steps.rbegin(); it != equation.SSA_steps.rend(); ++it)
   {
       out << "[DEBUG] SSA_step pre:\n";
       debug_dump_ssa_step(*it, out);
@@ -402,22 +400,15 @@ static void cse_dereference(symex_target_equationt &equation, symbol_tablet &sym
                           symbol_table);
                   auto cache_symbol_expr = cache_symbol.symbol_expr();
                   cache_symbol_expr.set(ID_C_SSA_symbol, ID_1);
-                  SSA_stept assign_step{it->source, goto_trace_stept::typet::ASSIGNMENT};
-                  // no renaming, but this should be fine because only one version of these
-                  // can ever exist anyway
-                  assign_step.ssa_lhs = to_ssa_expr(cache_symbol_expr);
-                  assign_step.ssa_rhs = expr_pre;
-                  assign_step.ssa_full_lhs = cache_symbol.symbol_expr();
-                  assign_step.original_full_lhs = expr_pre;
-                  assign_step.guard = true_exprt{};
-                  assign_step.guard_handle = false_exprt{};
-                  assign_step.cond_expr = equal_exprt{cache_symbol_expr, expr_pre};
-                  assign_step.cond_handle = false_exprt{};
-                  assign_step.assignment_type = symex_targett::assignment_typet::STATE;
-                  assign_step.ignore = false;
-                  assign_step.converted = false;
-                  equation.SSA_steps.insert(it, assign_step);
-                  auto insert_result = dereference_cache.emplace(expr_pre, cache_symbol.symbol_expr());
+                  equation.assignment(
+                          true_exprt{},
+                          to_ssa_expr(cache_symbol_expr),
+                          cache_symbol_expr,
+                          cache_symbol.symbol_expr(),
+                          expr_pre,
+                          it->source,
+                          symex_targett::assignment_typet::HIDDEN);
+                  auto insert_result = dereference_cache.emplace(expr_pre, cache_symbol_expr);
                   CHECK_RETURN(insert_result.second);
                   cached = insert_result.first;
               }
