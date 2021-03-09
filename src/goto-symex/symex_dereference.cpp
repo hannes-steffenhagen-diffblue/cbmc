@@ -286,59 +286,59 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
     // we should just return it unchanged
     // also if we are on the lhs of an assignment we should also not attempt to go to the cache
 
-    if(!write)
-    {
-      auto const cache_key = [&]{
-          auto cache_key = state.field_sensitivity.apply(ns, state, tmp2, write);
-          if(auto let_expr = expr_try_dynamic_cast<let_exprt>(tmp2)) {
-              let_expr->value() = state.rename<L2>(let_expr->value(), ns).get();
-          } else {
-            cache_key = state.rename<L2>(cache_key, ns).get();
-          }
-          return cache_key;
-      }();
-
-      if(auto cached = state.dereference_cache.lookup(cache_key))
-      {
-        expr = *cached;
-        return;
-      }
-
-      auto const &cache_symbol = get_fresh_aux_symbol(
-        tmp2.type(),
-        "symex",
-        "dereference_cache",
-        tmp2.source_location(),
-        ID_C,
-        ns,
-        state.symbol_table);
-
-      // we need to lift possible lets
-      // (come from the value set to avoid repeating complex pointer comparisons)
-      auto cache_value = cache_key;
-      lift_lets(state, cache_value);
-
-      exprt::operandst guard{};
-      auto assign = symex_assignt{
-        state,
-        symex_targett::assignment_typet::STATE,
-        ns,
-        symex_config,
-        target};
-
-      assign.assign_symbol(
-        to_ssa_expr(state.rename<L1>(cache_symbol.symbol_expr(), ns).get()),
-        expr_skeletont{},
-        cache_value,
-        guard);
-
-      state.dereference_cache.insert(cache_key, cache_symbol.symbol_expr());
-      expr = cache_symbol.symbol_expr();
-    }
-    else
-    {
-      expr = tmp2;
-    }
+    //    if(!write)
+    //    {
+    //      auto const cache_key = [&]{
+    //          auto cache_key = state.field_sensitivity.apply(ns, state, tmp2, write);
+    //          if(auto let_expr = expr_try_dynamic_cast<let_exprt>(tmp2)) {
+    //              let_expr->value() = state.rename<L2>(let_expr->value(), ns).get();
+    //          } else {
+    //            cache_key = state.rename<L2>(cache_key, ns).get();
+    //          }
+    //          return cache_key;
+    //      }();
+    //
+    //      if(auto cached = state.dereference_cache.lookup(cache_key))
+    //      {
+    //        expr = *cached;
+    //        return;
+    //      }
+    //
+    //      auto const &cache_symbol = get_fresh_aux_symbol(
+    //        tmp2.type(),
+    //        "symex",
+    //        "dereference_cache",
+    //        tmp2.source_location(),
+    //        ID_C,
+    //        ns,
+    //        state.symbol_table);
+    //
+    //      // we need to lift possible lets
+    //      // (come from the value set to avoid repeating complex pointer comparisons)
+    //      auto cache_value = cache_key;
+    //      lift_lets(state, cache_value);
+    //
+    //      exprt::operandst guard{};
+    //      auto assign = symex_assignt{
+    //        state,
+    //        symex_targett::assignment_typet::STATE,
+    //        ns,
+    //        symex_config,
+    //        target};
+    //
+    //      assign.assign_symbol(
+    //        to_ssa_expr(state.rename<L1>(cache_symbol.symbol_expr(), ns).get()),
+    //        expr_skeletont{},
+    //        cache_value,
+    //        guard);
+    //
+    //      state.dereference_cache.insert(cache_key, cache_symbol.symbol_expr());
+    //      expr = cache_symbol.symbol_expr();
+    //    }
+    //    else
+    //    {
+    expr = tmp2;
+    //    }
   }
   else if(
     expr.id() == ID_index && to_index_expr(expr).array().id() == ID_member &&

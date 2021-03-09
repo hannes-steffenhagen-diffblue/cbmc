@@ -444,8 +444,8 @@ void _check_with_strategy(
       resume.state,
       &resume.equation,
       symex_symbol_table);
-    postprocess_equation(
-      symex, resume.equation, options, ns, ui_message_handler);
+      postprocess_equation(
+              symex, resume.equation, options, ns, ui_message_handler, symex_symbol_table);
 
     incremental_goto_checkert::resultt result(
       incremental_goto_checkert::resultt::progresst::DONE);

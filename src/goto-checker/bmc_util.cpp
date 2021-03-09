@@ -29,6 +29,7 @@ Author: Daniel Kroening, Peter Schrammel
 
 #include <util/make_unique.h>
 #include <util/ui_message.h>
+#include <fresh_symbol.h>
 
 #include "goto_symex_property_decider.h"
 #include "symex_bmc.h"
@@ -318,12 +319,127 @@ void output_coverage_report(
   }
 }
 
-void postprocess_equation(
-  symex_bmct &symex,
-  symex_target_equationt &equation,
-  const optionst &options,
-  const namespacet &ns,
-  ui_message_handlert &ui_message_handler)
+__attribute__((used))
+static void debug_dump_ssa_step(const SSA_stept &step, std::ostream &out)
+{
+    static const char *type_to_string[] =
+            {
+                    "NONE",
+                    "ASSIGNMENT",
+                    "ASSUME",
+                    "ASSERT",
+                    "GOTO",
+                    "LOCATION",
+                    "INPUT",
+                    "OUTPUT",
+                    "DECL",
+                    "DEAD",
+                    "FUNCTION_CALL",
+                    "FUNCTION_RETURN",
+                    "CONSTRAINT",
+                    "SHARED_READ",
+                    "SHARED_WRITE",
+                    "SPAWN",
+                    "MEMORY_BARRIER",
+                    "ATOMIC_BEGIN",
+                    "ATOMIC_END"
+            };
+    static const char *assignment_type_to_string[] =
+            {
+                    "STATE",
+                    "HIDDEN",
+                    "VISIBLE_ACTUAL_PARAMETER",
+                    "HIDDEN_ACTUAL_PARAMETER",
+                    "PHI",
+                    "GUARD",
+            };
+    out << "[SSA_step " << type_to_string[static_cast<std::size_t>(step.type)]
+      << "\n  ssa_lhs={" << format(step.ssa_lhs) << "}"
+      << "\n  ssa_full_lhs={" << format(step.ssa_full_lhs) << "}"
+      << "\n  ssa_original_full_lhs={" << format(step.original_full_lhs) << "}"
+      << "\n  ssa_rhs={" << format(step.ssa_rhs) << "}"
+      << "\n  guard={" << format(step.guard) << "}"
+      << "\n  guard_handle={" << format(step.guard_handle) << "}"
+      << "\n  cond_expr={" << format(step.cond_expr) << "}"
+      << "\n  cond_handle={" << format(step.cond_handle) << "}"
+      << "\n  assignment_type={" << assignment_type_to_string[static_cast<std::size_t>(step.assignment_type)] << "}"
+      << '\n';
+}
+
+static void cse_dereference(symex_target_equationt &equation, symbol_tablet &symbol_table)
+{
+    std::ofstream out{"/tmp/debug_out.txt"};
+  std::unordered_map<exprt, symbol_exprt, irep_hash> dereference_cache{};
+  int SSA_step_nr = 0;
+  for(auto it = equation.SSA_steps.begin(); it != equation.SSA_steps.end();
+      ++it, ++SSA_step_nr)
+  {
+      out << "[DEBUG] SSA_step pre:\n";
+      debug_dump_ssa_step(*it, out);
+      const namespacet ns{symbol_table};
+    auto cse_dereference_cache_rec = [&](exprt &expr) {
+      // I think this breaks sharing, needs fixing
+      expr.visit_pre([&](exprt &expr_pre) {
+        // cache expressions of the form (p == &obj : ...)
+        if(auto if_expr = expr_try_dynamic_cast<if_exprt>(expr_pre))
+        {
+          if(
+            auto equal_expr =
+              expr_try_dynamic_cast<equal_exprt>(if_expr->cond()))
+          {
+            if(can_cast_expr<address_of_exprt>(equal_expr->op1()))
+            {
+              auto cached = dereference_cache.find(expr_pre);
+              if(cached == dereference_cache.end())
+              {
+                  auto const &cache_symbol = get_fresh_aux_symbol(
+                          expr_pre.type(),
+                          "symex",
+                          "dereference_cache",
+                          expr_pre.source_location(),
+                          ID_C,
+                          ns,
+                          symbol_table);
+                  auto cache_symbol_expr = cache_symbol.symbol_expr();
+                  cache_symbol_expr.set(ID_C_SSA_symbol, ID_1);
+                  SSA_stept assign_step{it->source, goto_trace_stept::typet::ASSIGNMENT};
+                  // no renaming, but this should be fine because only one version of these
+                  // can ever exist anyway
+                  assign_step.ssa_lhs = to_ssa_expr(cache_symbol_expr);
+                  assign_step.ssa_rhs = expr_pre;
+                  assign_step.ssa_full_lhs = cache_symbol.symbol_expr();
+                  assign_step.original_full_lhs = expr_pre;
+                  assign_step.guard = true_exprt{};
+                  assign_step.guard_handle = false_exprt{};
+                  assign_step.cond_expr = equal_exprt{cache_symbol_expr, expr_pre};
+                  assign_step.cond_handle = false_exprt{};
+                  assign_step.assignment_type = symex_targett::assignment_typet::STATE;
+                  assign_step.ignore = false;
+                  assign_step.converted = false;
+                  equation.SSA_steps.insert(it, assign_step);
+                  auto insert_result = dereference_cache.emplace(expr_pre, cache_symbol.symbol_expr());
+                  CHECK_RETURN(insert_result.second);
+                  cached = insert_result.first;
+              }
+              expr_pre = cached->second;
+            }
+          }
+        }
+      });
+    };
+    cse_dereference_cache_rec(it->ssa_rhs);
+    cse_dereference_cache_rec(it->guard);
+    cse_dereference_cache_rec(it->cond_expr);
+    out << "[DEBUG] SSA_step post:\n";
+    debug_dump_ssa_step(*it, out);
+  }
+  std::ofstream equation_out{"/tmp/equation.txt"};
+  equation.output(equation_out);
+}
+
+void
+postprocess_equation(symex_bmct &symex, symex_target_equationt &equation, const optionst &options, const namespacet &ns,
+                     ui_message_handlert &ui_message_handler, symbol_tablet &symex_symbol_table)
 {
   const auto postprocess_equation_start = std::chrono::steady_clock::now();
   // add a partial ordering, if required
@@ -339,6 +455,7 @@ void postprocess_equation(
                    << equation.SSA_steps.size() << " steps" << messaget::eom;
 
   slice(symex, equation, ns, options, ui_message_handler);
+  cse_dereference(equation, symex_symbol_table);
 
   if(options.get_bool_option("validate-ssa-equation"))
   {

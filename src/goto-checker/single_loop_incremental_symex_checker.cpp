@@ -102,7 +102,7 @@ operator()(propertiest &properties)
 
       if(!current_equation_converted)
       {
-        postprocess_equation(symex, equation, options, ns, ui_message_handler);
+          postprocess_equation(symex, equation, options, ns, ui_message_handler, symex_symbol_table);
 
         log.status() << "converting SSA" << messaget::eom;
         equation.convert_without_assertions(

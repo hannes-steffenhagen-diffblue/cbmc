@@ -87,7 +87,7 @@ void multi_path_symex_only_checkert::generate_equation()
   log.status() << "Runtime Symex: " << symex_runtime.count() << "s"
                << messaget::eom;
 
-  postprocess_equation(symex, equation, options, ns, ui_message_handler);
+    postprocess_equation(symex, equation, options, ns, ui_message_handler, symex_symbol_table);
 }
 
 void multi_path_symex_only_checkert::update_properties(
