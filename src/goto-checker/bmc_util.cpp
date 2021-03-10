@@ -366,6 +366,20 @@ static void debug_dump_ssa_step(const SSA_stept &step, std::ostream &out)
       << '\n';
 }
 
+bool looks_like_a_complex_dereference(const exprt &expr)
+{
+  if(auto if_expr = expr_try_dynamic_cast<if_exprt>(expr))
+  {
+    if(auto equal_expr = expr_try_dynamic_cast<equal_exprt>(if_expr->cond()))
+    {
+      if(can_cast_expr<address_of_exprt>(equal_expr->op1()))
+      {
+        return true;
+      }
+    }
+  }
+  return false;
+}
 static void cse_dereference(symex_target_equationt &equation, symbol_tablet &symbol_table)
 {
     std::ofstream out{"/tmp/debug_out.txt"};
@@ -379,43 +393,36 @@ static void cse_dereference(symex_target_equationt &equation, symbol_tablet &sym
       // I think this breaks sharing, needs fixing
       expr.visit_pre([&](exprt &expr_pre) {
         // cache expressions of the form (p == &obj : ...)
-        if(auto if_expr = expr_try_dynamic_cast<if_exprt>(expr_pre))
+        if(looks_like_a_complex_dereference(expr_pre))
         {
-          if(
-            auto equal_expr =
-              expr_try_dynamic_cast<equal_exprt>(if_expr->cond()))
+          auto cached = dereference_cache.find(expr_pre);
+          if(cached == dereference_cache.end())
           {
-            if(can_cast_expr<address_of_exprt>(equal_expr->op1()))
-            {
-              auto cached = dereference_cache.find(expr_pre);
-              if(cached == dereference_cache.end())
-              {
-                  auto const &cache_symbol = get_fresh_aux_symbol(
-                          expr_pre.type(),
-                          "symex",
-                          "dereference_cache",
-                          expr_pre.source_location(),
-                          ID_C,
-                          ns,
-                          symbol_table);
-                  auto cache_symbol_expr = cache_symbol.symbol_expr();
-                  cache_symbol_expr.set(ID_C_SSA_symbol, ID_1);
-                  cache_symbol_expr.set(ID_expression, cache_symbol.symbol_expr());
-                  equation.assignment(
-                          true_exprt{},
-                          to_ssa_expr(cache_symbol_expr),
-                          cache_symbol_expr,
-                          cache_symbol.symbol_expr(),
-                          expr_pre,
-                          it->source,
-                          symex_targett::assignment_typet::HIDDEN);
-                  auto insert_result = dereference_cache.emplace(expr_pre, cache_symbol_expr);
-                  CHECK_RETURN(insert_result.second);
-                  cached = insert_result.first;
-              }
-              expr_pre = cached->second;
-            }
+            auto const &cache_symbol = get_fresh_aux_symbol(
+              expr_pre.type(),
+              "symex",
+              "dereference_cache",
+              expr_pre.source_location(),
+              ID_C,
+              ns,
+              symbol_table);
+            auto cache_symbol_expr = cache_symbol.symbol_expr();
+            cache_symbol_expr.set(ID_C_SSA_symbol, ID_1);
+            cache_symbol_expr.set(ID_expression, cache_symbol.symbol_expr());
+            equation.assignment(
+              true_exprt{},
+              to_ssa_expr(cache_symbol_expr),
+              cache_symbol_expr,
+              cache_symbol.symbol_expr(),
+              expr_pre,
+              it->source,
+              symex_targett::assignment_typet::HIDDEN);
+            auto insert_result =
+              dereference_cache.emplace(expr_pre, cache_symbol_expr);
+            CHECK_RETURN(insert_result.second);
+            cached = insert_result.first;
           }
+          expr_pre = cached->second;
         }
       });
     };
