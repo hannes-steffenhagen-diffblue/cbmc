@@ -382,13 +382,10 @@ bool looks_like_a_complex_dereference(const exprt &expr)
 }
 static void cse_dereference(symex_target_equationt &equation, symbol_tablet &symbol_table)
 {
-    std::ofstream out{"/tmp/debug_out.txt"};
   std::unordered_map<exprt, symbol_exprt, irep_hash> dereference_cache{};
   for(auto it = equation.SSA_steps.rbegin(); it != equation.SSA_steps.rend(); ++it)
   {
-      out << "[DEBUG] SSA_step pre:\n";
-      debug_dump_ssa_step(*it, out);
-      const namespacet ns{symbol_table};
+    const namespacet ns{symbol_table};
     auto cse_dereference_cache_rec = [&](exprt &expr) {
       // I think this breaks sharing, needs fixing
       expr.visit_pre([&](exprt &expr_pre) {
@@ -429,11 +426,7 @@ static void cse_dereference(symex_target_equationt &equation, symbol_tablet &sym
     cse_dereference_cache_rec(it->ssa_rhs);
     cse_dereference_cache_rec(it->guard);
     cse_dereference_cache_rec(it->cond_expr);
-    out << "[DEBUG] SSA_step post:\n";
-    debug_dump_ssa_step(*it, out);
   }
-  std::ofstream equation_out{"/tmp/equation.txt"};
-  equation.output(equation_out);
 }
 
 void
