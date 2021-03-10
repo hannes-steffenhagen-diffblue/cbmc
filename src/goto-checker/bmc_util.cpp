@@ -380,52 +380,64 @@ bool looks_like_a_complex_dereference(const exprt &expr)
   }
   return false;
 }
+
+using cse_cachet = std::unordered_map<exprt, symbol_exprt, irep_hash>;
+
+struct cse_entryt {
+    exprt original_expression;
+    symbol_exprt cache_name;
+};
+
+void apply_cse_to(exprt &expr, cse_cachet &cache, const namespacet &ns, symbol_tablet &symbol_table, std::vector<cse_entryt> &new_entries) {
+    expr.visit_pre([&](exprt &expr_pre) {
+        // cache expressions of the form (p == &obj : ...)
+        // NOTE: we can cache ANY type of subexpression by just swapping out
+        // this function, so this is a candidate for parameter extraction
+        if(looks_like_a_complex_dereference(expr_pre))
+        {
+            auto cached = cache.find(expr_pre);
+            if(cached == cache.end())
+            {
+                auto const &cache_symbol = get_fresh_aux_symbol(
+                        expr_pre.type(),
+                        "symex",
+                        "dereference_cache",
+                        expr_pre.source_location(),
+                        ID_C,
+                        ns,
+                        symbol_table);
+                auto cache_symbol_expr = ssa_exprt{cache_symbol.symbol_expr()};
+                auto insert_result =
+                        cache.emplace(expr_pre, cache_symbol_expr);
+                new_entries.push_back(cse_entryt{expr_pre, cache_symbol_expr});
+                CHECK_RETURN(insert_result.second);
+                cached = insert_result.first;
+            }
+            expr_pre = cached->second;
+        }
+    });
+}
+
 static void cse_dereference(symex_target_equationt &equation, symbol_tablet &symbol_table)
 {
   std::unordered_map<exprt, symbol_exprt, irep_hash> dereference_cache{};
+  const namespacet ns{symbol_table};
   for(auto it = equation.SSA_steps.rbegin(); it != equation.SSA_steps.rend(); ++it)
   {
-    const namespacet ns{symbol_table};
-    auto cse_dereference_cache_rec = [&](exprt &expr) {
-      // I think this breaks sharing, needs fixing
-      expr.visit_pre([&](exprt &expr_pre) {
-        // cache expressions of the form (p == &obj : ...)
-        if(looks_like_a_complex_dereference(expr_pre))
-        {
-          auto cached = dereference_cache.find(expr_pre);
-          if(cached == dereference_cache.end())
-          {
-            auto const &cache_symbol = get_fresh_aux_symbol(
-              expr_pre.type(),
-              "symex",
-              "dereference_cache",
-              expr_pre.source_location(),
-              ID_C,
-              ns,
-              symbol_table);
-            auto cache_symbol_expr = cache_symbol.symbol_expr();
-            cache_symbol_expr.set(ID_C_SSA_symbol, ID_1);
-            cache_symbol_expr.set(ID_expression, cache_symbol.symbol_expr());
-            equation.assignment(
-              true_exprt{},
-              to_ssa_expr(cache_symbol_expr),
-              cache_symbol_expr,
-              cache_symbol.symbol_expr(),
-              expr_pre,
-              it->source,
-              symex_targett::assignment_typet::HIDDEN);
-            auto insert_result =
-              dereference_cache.emplace(expr_pre, cache_symbol_expr);
-            CHECK_RETURN(insert_result.second);
-            cached = insert_result.first;
-          }
-          expr_pre = cached->second;
-        }
-      });
-    };
-    cse_dereference_cache_rec(it->ssa_rhs);
-    cse_dereference_cache_rec(it->guard);
-    cse_dereference_cache_rec(it->cond_expr);
+    std::vector<cse_entryt> new_cse_entries{};
+    apply_cse_to(it->ssa_rhs, dereference_cache, ns, symbol_table, new_cse_entries);
+    apply_cse_to(it->guard, dereference_cache, ns, symbol_table, new_cse_entries);
+    apply_cse_to(it->cond_expr, dereference_cache, ns, symbol_table, new_cse_entries);
+    for(auto const& cse_entry : new_cse_entries) {
+        equation.assignment(
+                true_exprt{},
+                to_ssa_expr(cse_entry.cache_name),
+                cse_entry.cache_name,
+                cse_entry.cache_name,
+                cse_entry.original_expression,
+                it->source,
+                symex_targett::assignment_typet::HIDDEN);
+    }
   }
 }
 
