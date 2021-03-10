@@ -400,6 +400,7 @@ static void cse_dereference(symex_target_equationt &equation, symbol_tablet &sym
                           symbol_table);
                   auto cache_symbol_expr = cache_symbol.symbol_expr();
                   cache_symbol_expr.set(ID_C_SSA_symbol, ID_1);
+                  cache_symbol_expr.set(ID_expression, cache_symbol.symbol_expr());
                   equation.assignment(
                           true_exprt{},
                           to_ssa_expr(cache_symbol_expr),
