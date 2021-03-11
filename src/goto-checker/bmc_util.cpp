@@ -29,7 +29,6 @@ Author: Daniel Kroening, Peter Schrammel
 
 #include <util/make_unique.h>
 #include <util/ui_message.h>
-#include <fresh_symbol.h>
 
 #include "goto_symex_property_decider.h"
 #include "symex_bmc.h"
@@ -319,131 +318,12 @@ void output_coverage_report(
   }
 }
 
-__attribute__((used))
-static void debug_dump_ssa_step(const SSA_stept &step, std::ostream &out)
-{
-    static const char *type_to_string[] =
-            {
-                    "NONE",
-                    "ASSIGNMENT",
-                    "ASSUME",
-                    "ASSERT",
-                    "GOTO",
-                    "LOCATION",
-                    "INPUT",
-                    "OUTPUT",
-                    "DECL",
-                    "DEAD",
-                    "FUNCTION_CALL",
-                    "FUNCTION_RETURN",
-                    "CONSTRAINT",
-                    "SHARED_READ",
-                    "SHARED_WRITE",
-                    "SPAWN",
-                    "MEMORY_BARRIER",
-                    "ATOMIC_BEGIN",
-                    "ATOMIC_END"
-            };
-    static const char *assignment_type_to_string[] =
-            {
-                    "STATE",
-                    "HIDDEN",
-                    "VISIBLE_ACTUAL_PARAMETER",
-                    "HIDDEN_ACTUAL_PARAMETER",
-                    "PHI",
-                    "GUARD",
-            };
-    out << "[SSA_step " << type_to_string[static_cast<std::size_t>(step.type)]
-      << "\n  ssa_lhs={" << format(step.ssa_lhs) << "}"
-      << "\n  ssa_full_lhs={" << format(step.ssa_full_lhs) << "}"
-      << "\n  ssa_original_full_lhs={" << format(step.original_full_lhs) << "}"
-      << "\n  ssa_rhs={" << format(step.ssa_rhs) << "}"
-      << "\n  guard={" << format(step.guard) << "}"
-      << "\n  guard_handle={" << format(step.guard_handle) << "}"
-      << "\n  cond_expr={" << format(step.cond_expr) << "}"
-      << "\n  cond_handle={" << format(step.cond_handle) << "}"
-      << "\n  assignment_type={" << assignment_type_to_string[static_cast<std::size_t>(step.assignment_type)] << "}"
-      << '\n';
-}
-
-bool looks_like_a_complex_dereference(const exprt &expr)
-{
-  if(auto if_expr = expr_try_dynamic_cast<if_exprt>(expr))
-  {
-    if(auto equal_expr = expr_try_dynamic_cast<equal_exprt>(if_expr->cond()))
-    {
-      if(can_cast_expr<address_of_exprt>(equal_expr->op1()))
-      {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-using cse_cachet = std::unordered_map<exprt, symbol_exprt, irep_hash>;
-
-struct cse_entryt {
-    exprt original_expression;
-    symbol_exprt cache_name;
-};
-
-void apply_cse_to(exprt &expr, cse_cachet &cache, const namespacet &ns, symbol_tablet &symbol_table, std::vector<cse_entryt> &new_entries) {
-    expr.visit_pre([&](exprt &expr_pre) {
-        // cache expressions of the form (p == &obj : ...)
-        // NOTE: we can cache ANY type of subexpression by just swapping out
-        // this function, so this is a candidate for parameter extraction
-        if(looks_like_a_complex_dereference(expr_pre))
-        {
-            auto cached = cache.find(expr_pre);
-            if(cached == cache.end())
-            {
-                auto const &cache_symbol = get_fresh_aux_symbol(
-                        expr_pre.type(),
-                        "symex",
-                        "dereference_cache",
-                        expr_pre.source_location(),
-                        ID_C,
-                        ns,
-                        symbol_table);
-                auto cache_symbol_expr = ssa_exprt{cache_symbol.symbol_expr()};
-                auto insert_result =
-                        cache.emplace(expr_pre, cache_symbol_expr);
-                new_entries.push_back(cse_entryt{expr_pre, cache_symbol_expr});
-                CHECK_RETURN(insert_result.second);
-                cached = insert_result.first;
-            }
-            expr_pre = cached->second;
-        }
-    });
-}
-
-static void cse_dereference(symex_target_equationt &equation, symbol_tablet &symbol_table)
-{
-  std::unordered_map<exprt, symbol_exprt, irep_hash> dereference_cache{};
-  const namespacet ns{symbol_table};
-  for(auto it = equation.SSA_steps.rbegin(); it != equation.SSA_steps.rend(); ++it)
-  {
-    std::vector<cse_entryt> new_cse_entries{};
-    apply_cse_to(it->ssa_rhs, dereference_cache, ns, symbol_table, new_cse_entries);
-    apply_cse_to(it->guard, dereference_cache, ns, symbol_table, new_cse_entries);
-    apply_cse_to(it->cond_expr, dereference_cache, ns, symbol_table, new_cse_entries);
-    for(auto const& cse_entry : new_cse_entries) {
-        equation.assignment(
-                true_exprt{},
-                to_ssa_expr(cse_entry.cache_name),
-                cse_entry.cache_name,
-                cse_entry.cache_name,
-                cse_entry.original_expression,
-                it->source,
-                symex_targett::assignment_typet::HIDDEN);
-    }
-  }
-}
-
-void
-postprocess_equation(symex_bmct &symex, symex_target_equationt &equation, const optionst &options, const namespacet &ns,
-                     ui_message_handlert &ui_message_handler, symbol_tablet &symex_symbol_table)
+void postprocess_equation(
+  symex_bmct &symex,
+  symex_target_equationt &equation,
+  const optionst &options,
+  const namespacet &ns,
+  ui_message_handlert &ui_message_handler)
 {
   const auto postprocess_equation_start = std::chrono::steady_clock::now();
   // add a partial ordering, if required
@@ -459,7 +339,6 @@ postprocess_equation(symex_bmct &symex, symex_target_equationt &equation, const 
                    << equation.SSA_steps.size() << " steps" << messaget::eom;
 
   slice(symex, equation, ns, options, ui_message_handler);
-  cse_dereference(equation, symex_symbol_table);
 
   if(options.get_bool_option("validate-ssa-equation"))
   {

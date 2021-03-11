@@ -106,7 +106,7 @@ bool single_path_symex_only_checkert::resume_path(path_storaget::patht &path)
   const auto symex_stop = std::chrono::steady_clock::now();
   symex_runtime += std::chrono::duration<double>(symex_stop - symex_start);
 
-    postprocess_equation(symex, path.equation, options, ns, ui_message_handler, symex_symbol_table);
+  postprocess_equation(symex, path.equation, options, ns, ui_message_handler);
 
   equation_output(symex, path.equation);
 

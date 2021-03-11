@@ -14,6 +14,47 @@ Author: Romain Brenguier, romain.brenguier@diffblue.com
 
 #include <iostream>
 
+void dereference_cachet::debug_dump() const
+{
+  std::cout << "{\n";
+  for(auto const &kv : cache)
+  {
+    std::cout << format(kv.first) << " -> " << format(kv.second) << "\n";
+  }
+  std::cout << "}\n";
+}
+
+optionalt<symbol_exprt>
+dereference_cachet::lookup(const exprt &dereference) const
+{
+//  return nullopt;
+   auto it = cache.find(dereference);
+   if(it == cache.end()) {
+//     std::cout << "missed cache lookup for " << format(dereference) << '\n';
+//     debug_dump();
+     return nullopt;
+   } else {
+//     std::cout << "found cached name " << format(it->second) << " for " << format(dereference) << '\n';
+     return {it->second};
+   }
+}
+
+void dereference_cachet::insert(
+  exprt new_cached_expr,
+  symbol_exprt new_cache_symbol)
+{
+   cache.emplace(std::move(new_cached_expr), std::move(new_cache_symbol));
+}
+
+void dereference_cachet::evict(const exprt &cached_pointer_expr)
+{
+//   cache.erase(cached_pointer_expr);
+}
+
+void dereference_cachet::clear()
+{
+//   cache.clear();
+}
 
 /// Print the constant propagation map in a human-friendly format.
 /// This is primarily for use from the debugger; please don't delete me just
