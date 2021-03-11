@@ -75,7 +75,7 @@ exprt goto_symext::address_arithmetic(
 
     // there could be further dereferencing in the offset
     exprt offset=be.offset();
-    dereference_rec(offset, state, false);
+    dereference_rec(offset, state, false, false);
 
     result=plus_exprt(result, offset);
 
@@ -111,14 +111,14 @@ exprt goto_symext::address_arithmetic(
     // just grab the pointer, but be wary of further dereferencing
     // in the pointer itself
     result=to_dereference_expr(expr).pointer();
-    dereference_rec(result, state, false);
+    dereference_rec(result, state, false, false);
   }
   else if(expr.id()==ID_if)
   {
     if_exprt if_expr=to_if_expr(expr);
 
     // the condition is not an address
-    dereference_rec(if_expr.cond(), state, false);
+    dereference_rec(if_expr.cond(), state, false, false);
 
     // recursive call
     if_expr.true_case() =
@@ -135,7 +135,7 @@ exprt goto_symext::address_arithmetic(
   {
     // give up, just dereference
     result=expr;
-    dereference_rec(result, state, false);
+    dereference_rec(result, state, false, false);
 
     // turn &array into &array[0]
     if(result.type().id() == ID_array && !keep_array)
@@ -207,7 +207,11 @@ __attribute__((noinline)) std::string format_expr(const exprt &expr)
 /// such as `&struct.flexible_array[0]` (see inline comments in code).
 /// For full details of this method's pointer replacement and potential side-
 /// effects see \ref goto_symext::dereference
-void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
+void goto_symext::dereference_rec(
+  exprt &expr,
+  statet &state,
+  bool write,
+  bool is_in_quantifier)
 {
   if(expr.id()==ID_dereference)
   {
@@ -230,7 +234,7 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
     tmp1.swap(to_dereference_expr(expr).pointer());
 
     // first make sure there are no dereferences in there
-    dereference_rec(tmp1, state, false);
+    dereference_rec(tmp1, state, false, is_in_quantifier);
 
     // Depending on the nature of the pointer expression, the recursive deref
     // operation might have introduced a construct such as
@@ -285,8 +289,9 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
     // (i.e. of the form [let p = <expr> in ] (p == &something ? something : ...)
     // we should just return it unchanged
     // also if we are on the lhs of an assignment we should also not attempt to go to the cache
-
-    if(!write)
+    // we cannot do this for quantified expressions because this would result in us referencing
+    // quantifier variables outside the scope of the quantifier.
+    if(!write && !is_in_quantifier)
     {
       auto const cache_key = [&]{
           auto cache_key = state.field_sensitivity.apply(ns, state, tmp2, write);
@@ -357,7 +362,7 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
     tmp.add_source_location()=expr.source_location();
 
     // recursive call
-    dereference_rec(tmp, state, write);
+    dereference_rec(tmp, state, write, is_in_quantifier);
 
     expr.swap(tmp);
   }
@@ -395,17 +400,18 @@ void goto_symext::dereference_rec(exprt &expr, statet &state, bool write)
             to_address_of_expr(tc_op).object(),
             from_integer(0, index_type())));
 
-      dereference_rec(expr, state, write);
+      dereference_rec(expr, state, write, is_in_quantifier);
     }
     else
     {
-      dereference_rec(tc_op, state, write);
+      dereference_rec(tc_op, state, write, is_in_quantifier);
     }
   }
   else
   {
+    bool is_quantifier = expr.id() == ID_forall || expr.id() == ID_exists;
     Forall_operands(it, expr)
-      dereference_rec(*it, state, write);
+      dereference_rec(*it, state, write, is_in_quantifier || is_quantifier);
   }
 }
 
@@ -473,7 +479,7 @@ void goto_symext::dereference(exprt &expr, statet &state, bool write)
   });
 
   // start the recursion!
-  dereference_rec(expr, state, write);
+  dereference_rec(expr, state, write, false);
   // dereferencing may introduce new symbol_exprt
   // (like __CPROVER_memory)
   expr = state.rename<L1>(std::move(expr), ns).get();
