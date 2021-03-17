@@ -30,7 +30,6 @@ dereference_cachet::lookup(const exprt &dereference) const
 //  return nullopt;
    auto it = cache.find(dereference);
    if(it == cache.end()) {
-     std::cout << "missed cache lookup for " << format(dereference) << '\n';
      //     debug_dump();
      return nullopt;
    } else {

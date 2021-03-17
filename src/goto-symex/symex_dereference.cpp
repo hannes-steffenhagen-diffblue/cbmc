@@ -291,7 +291,7 @@ void goto_symext::dereference_rec(
     // also if we are on the lhs of an assignment we should also not attempt to go to the cache
     // we cannot do this for quantified expressions because this would result in us referencing
     // quantifier variables outside the scope of the quantifier.
-    if(!write && !is_in_quantifier)
+    if(!write && !is_in_quantifier && (tmp2.id() == ID_if || tmp2.id() == ID_let))
     {
       auto const cache_key = [&]{
           auto cache_key = state.field_sensitivity.apply(ns, state, tmp2, write);
